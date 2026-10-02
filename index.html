@@ -1,0 +1,1446 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Jalur Naik Level</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: satu kolom baca yang lebar sedang; beranda = dua jalur berdampingan (teknis | Inggris), detail target = materi lalu ujian. */
+:root{
+  --bg:#F3F5F9; --surface:#FFFFFF; --sunk:#EAEEF4; --ink:#17202E; --muted:#556073; --line:#D8DEE8;
+  --tek:#1D6C75; --tek-soft:#DCEEF0; --eng:#9A5A0C; --eng-soft:#F6E8D3;
+  --good:#24774A; --good-soft:#DDF1E5; --bad:#B03434; --bad-soft:#F8E1E1; --warn:#8A6400; --warn-soft:#FBF0CF;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F131A; --surface:#161C26; --sunk:#1C2330; --ink:#E6EBF2; --muted:#9BA6B8; --line:#2A3343;
+  --tek:#62BCC5; --tek-soft:#173238; --eng:#E3A85A; --eng-soft:#3A2A14;
+  --good:#5FC48D; --good-soft:#17311F; --bad:#F07F7F; --bad-soft:#3A1C1C; --warn:#E6C062; --warn-soft:#352B12;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0F131A; --surface:#161C26; --sunk:#1C2330; --ink:#E6EBF2; --muted:#9BA6B8; --line:#2A3343;
+  --tek:#62BCC5; --tek-soft:#173238; --eng:#E3A85A; --eng-soft:#3A2A14;
+  --good:#5FC48D; --good-soft:#17311F; --bad:#F07F7F; --bad-soft:#3A1C1C; --warn:#E6C062; --warn-soft:#352B12;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:24px 64px}
+.wrap{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--f-display);line-height:1.2;text-wrap:balance;margin:0}
+h1{font-size:clamp(28px,5vw,40px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:700}
+h3{font-size:18px;font-weight:700}
+p{margin:0}
+button{font:inherit;cursor:pointer}
+:focus-visible{outline:3px solid var(--tek);outline-offset:2px;border-radius:6px}
+.muted{color:var(--muted)}
+.eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:var(--muted)}
+.num{font-variant-numeric:tabular-nums}
+
+/* header */
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:12px 24px}
+.top .lead{max-width:60ch;margin-top:8px;color:var(--muted)}
+.save{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.save i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.save.db i{background:var(--good)}
+
+/* rule strip */
+.rule{display:flex;flex-wrap:wrap;gap:8px 20px;padding:14px 16px;border:1px dashed var(--line);border-radius:var(--r);font-size:14px;color:var(--muted)}
+.rule b{color:var(--ink)}
+
+/* tracks */
+.tracks{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:24px}
+.track{display:flex;flex-direction:column;gap:12px;min-width:0}
+.track-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+.track-head h2{display:flex;align-items:center;gap:10px}
+.track-head h2::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--c)}
+.bar{height:6px;background:var(--sunk);border-radius:99px;overflow:hidden}
+.bar span{display:block;height:100%;background:var(--c);border-radius:99px;transition:width .4s}
+.list{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);overflow:hidden}
+.item{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:12px;padding:12px 14px;border:0;border-top:1px solid var(--line);background:none;color:inherit;text-align:left;width:100%}
+.item:first-child{border-top:0}
+.item:not([disabled]):hover{background:var(--sunk)}
+.item[disabled]{cursor:not-allowed;color:var(--muted)}
+.idx{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:700;border:1.5px solid var(--line);color:var(--muted)}
+.item.on .idx{border-color:var(--c);color:var(--c)}
+.item.done .idx{background:var(--c);border-color:var(--c);color:var(--surface)}
+.item .t{font-weight:700;min-width:0}
+.item .s{font-size:13px;color:var(--muted)}
+.pill{font-size:12px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.p-done{background:var(--good-soft);color:var(--good)}
+.p-run{background:var(--sunk);color:var(--ink)}
+.p-late{background:var(--warn-soft);color:var(--warn)}
+.p-redo{background:var(--bad-soft);color:var(--bad)}
+.p-lock{color:var(--muted)}
+
+/* detail */
+.back{align-self:flex-start;background:none;border:0;color:var(--muted);padding:4px 0;font-size:15px}
+.back:hover{color:var(--ink)}
+.dhead{display:flex;flex-direction:column;gap:10px}
+.dmeta{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.chip{font-size:13px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--cs);color:var(--c)}
+.days{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.days span{width:22px;height:8px;border-radius:3px;background:var(--sunk)}
+.days span.past{background:var(--c)}
+.days span.over{background:var(--warn)}
+.goals{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.goals ul{margin:0;padding-left:20px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;font-weight:700;color:var(--muted);white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--c)}
+.tab[disabled]{opacity:.5;cursor:not-allowed}
+
+.notice{padding:14px 16px;border-radius:var(--r);font-size:15px;display:flex;flex-direction:column;gap:6px}
+.n-bad{background:var(--bad-soft);color:var(--ink);border-left:4px solid var(--bad)}
+.n-good{background:var(--good-soft);border-left:4px solid var(--good)}
+.n-info{background:var(--sunk);border-left:4px solid var(--c)}
+
+/* material */
+.mat{display:flex;flex-direction:column;gap:14px;max-width:72ch}
+.mat ul,.mat ol{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:4px}
+.mat h3{margin-top:10px}
+.mat code{font-family:var(--f-mono);font-size:.88em;background:var(--sunk);padding:1px 5px;border-radius:4px}
+pre{margin:0;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:12px 14px;overflow-x:auto;font-family:var(--f-mono);font-size:13.5px;line-height:1.55}
+pre code{background:none!important;padding:0!important;font-size:inherit!important}
+blockquote{margin:0;padding:12px 16px;border-left:3px solid var(--c);background:var(--surface);border-radius:0 8px 8px 0;font-style:italic}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.tbl table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:480px}
+.tbl th,.tbl td{padding:8px 12px;text-align:left;vertical-align:top;border-top:1px solid var(--line)}
+.tbl tr:first-child th{border-top:0;background:var(--sunk);font-size:13px}
+.tip{font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+
+.btn{border:0;border-radius:8px;padding:11px 18px;font-weight:700;background:var(--c);color:var(--surface)}
+.btn:hover:not([disabled]){filter:brightness(1.08)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:none;color:var(--ink);border:1.5px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+
+/* exam */
+.exam{display:flex;flex-direction:column;gap:18px;max-width:76ch}
+.q{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.q.ok{border-color:var(--good)}
+.q.no{border-color:var(--bad)}
+.qn{font-size:13px;font-weight:700;color:var(--muted)}
+.qt{font-weight:700}
+.opts{display:flex;flex-direction:column;gap:8px}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;cursor:pointer}
+.opt:hover{background:var(--sunk)}
+.opt input{margin-top:4px;accent-color:var(--c);flex:none}
+.opt.sel{border-color:var(--c)}
+.opt.right{border-color:var(--good);background:var(--good-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.lockd{cursor:default}
+.opt.lockd:hover{background:none}
+.opt.right:hover{background:var(--good-soft)}
+.opt.wrong:hover{background:var(--bad-soft)}
+.opt .tag{margin-left:auto;font-size:12px;font-weight:700;white-space:nowrap}
+.why{font-size:15px;background:var(--sunk);border-radius:8px;padding:10px 12px}
+.why b{display:block;margin-bottom:2px}
+.score{font-family:var(--f-display);font-size:34px;font-weight:700}
+.sticky{position:sticky;bottom:0;background:var(--bg);padding:12px 0;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+
+/* history */
+.hist{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+.hist div{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-top:1px solid var(--line)}
+.hist div:first-child{border-top:0}
+
+.foot{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;font-size:14px;color:var(--muted);border-top:1px solid var(--line);padding-top:16px}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;padding:0}
+.linkbtn.danger{color:var(--bad)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+// Isi materi dan soal. Setiap soal: q (pertanyaan), code (opsional), o (pilihan), a (indeks jawaban benar), w (alasan).
+const TRACKS = [
+{
+id: "tek", name: "Skill teknis", short: "Teknis",
+targets: [
+{
+id: "t1", days: 4, title: "Cara berpikir trade-off",
+goals: [
+"Menjelaskan masalah apa yang diselesaikan sebuah teknologi",
+"Menyebut apa yang dikorbankan saat memilihnya",
+"Memasukkan faktor non-teknis: keahlian tim, ekosistem, kode lama"
+],
+material: `
+<p>Setiap pilihan teknologi adalah tukar-menukar: kamu mendapat sesuatu dengan mengorbankan sesuatu yang lain. Senior developer jarang bertanya "mana yang terbaik?". Mereka bertanya "terbaik untuk situasi apa?".</p>
+<h3>Lima pertanyaan untuk setiap teknologi</h3>
+<ol>
+<li><b>Masalah apa yang diselesaikan?</b> Teknologi lahir karena ada kesulitan tertentu.</li>
+<li><b>Apa yang dikorbankan?</b> Biasanya kerumitan, ukuran bundle, waktu belajar, atau fleksibilitas.</li>
+<li><b>Siapa yang memakainya?</b> Tim kecil yang ingin cepat rilis berbeda kebutuhannya dengan tim besar yang butuh aturan ketat.</li>
+<li><b>Bagaimana ekosistemnya?</b> Library, dokumentasi, komunitas, dan kemudahan merekrut.</li>
+<li><b>Apa yang sudah ada?</b> Kode lama dan keahlian tim sering menjadi alasan terbesar.</li>
+</ol>
+<h3>Contoh dari alat yang sudah kamu pakai</h3>
+<div class="tbl"><table>
+<tr><th>Pilihan</th><th>Menyelesaikan</th><th>Mengorbankan</th><th>Cocok untuk</th></tr>
+<tr><td>React</td><td>Tampilan dari komponen yang dipakai ulang</td><td>Routing, data fetching dipilih sendiri</td><td>Aplikasi interaktif</td></tr>
+<tr><td>Next.js</td><td>SEO dan halaman pertama yang lambat di React</td><td>Lebih banyak konsep (server vs client)</td><td>Situs publik, e-commerce</td></tr>
+<tr><td>Vue</td><td>Seperti React, sintaks lebih mudah dipelajari</td><td>Pasar kerja global lebih kecil</td><td>Tim kecil, cepat jalan</td></tr>
+<tr><td>Laravel</td><td>Backend lengkap dengan cepat</td><td>Lebih berat, banyak "sihir" tersembunyi</td><td>Aplikasi bisnis</td></tr>
+<tr><td>CodeIgniter</td><td>Framework PHP ringan</td><td>Fitur bawaan lebih sedikit</td><td>Aplikasi kecil</td></tr>
+<tr><td>PostgreSQL</td><td>Data berelasi yang harus konsisten</td><td>Skema dirancang di awal</td><td>Transaksi, pesanan</td></tr>
+<tr><td>MongoDB</td><td>Data dengan struktur yang sering berubah</td><td>Relasi dan konsistensi lebih sulit</td><td>Log, katalog fleksibel</td></tr>
+</table></div>
+<h3>Cara menjawab di wawancara</h3>
+<p>Jawaban yang lemah: <i>"Because it's popular."</i> Jawaban yang kuat menyebut kebutuhan, alasan, dan harga yang dibayar:</p>
+<blockquote>We needed good SEO and a fast first load for our public pages. The team already knew React, so Next.js gave us server rendering without learning a new library. The trade-off is more complexity around server and client components.</blockquote>
+<p class="tip">Latihan harian: pilih satu teknologi di kantor, jawab lima pertanyaan di atas dalam bahasa Inggris.</p>`,
+questions: [
+{q:"Sebuah e-commerce butuh halaman produk yang muncul di Google dan cepat terbuka di HP. Pilihan mana yang paling masuk akal?",
+o:["React SPA biasa (client-side rendering)","Next.js dengan halaman yang di-render di server (SSR/SSG)","Vue SPA tanpa server","Halaman HTML statis yang ditulis manual untuk setiap produk"],a:1,
+w:"Next.js mengirim HTML yang sudah berisi konten, sehingga mesin pencari langsung membacanya dan pengguna langsung melihat konten. React atau Vue SPA mengirim HTML kosong lalu menunggu JavaScript, yang lebih lambat dan kurang baik untuk SEO. HTML manual tidak mungkin dirawat untuk ribuan produk."},
+{q:"Tim berisi 3 orang yang semuanya ahli Laravel diminta membuat aplikasi internal dalam 2 bulan. Alasan terkuat untuk tetap memakai Laravel adalah...",
+o:["Laravel selalu paling cepat di benchmark","Keahlian tim dan tenggat waktu: tim langsung produktif tanpa belajar hal baru","Hanya Laravel yang bisa membuat halaman admin","PHP pasti lebih aman dari bahasa lain"],a:1,
+w:"Faktor non-teknis seperti keahlian tim dan waktu sering menjadi alasan terbesar. Pilihan lain adalah klaim mutlak yang tidak benar: banyak framework bisa membuat halaman admin, dan keamanan lebih ditentukan cara menulis kode daripada bahasanya."},
+{q:"Apa yang biasanya dikorbankan saat memilih framework lengkap (seperti Laravel atau Next.js) dibanding library kecil?",
+o:["Tidak bisa dipakai di production","Lebih banyak konsep dan aturan yang harus dipahami dan diikuti","Tidak bisa terhubung ke database","Tidak punya komunitas"],a:1,
+w:"Framework lengkap memberi banyak fitur siap pakai, dengan harga berupa kerumitan dan konvensi yang harus diikuti. Ketiga pilihan lain salah: keduanya dipakai luas di production, bisa memakai database, dan punya komunitas besar."},
+{q:"Data pesanan dan pembayaran harus selalu konsisten dan saling berhubungan (user, order, payment). Database mana yang paling cocok?",
+o:["MongoDB, karena skemanya fleksibel","PostgreSQL, karena kuat di relasi dan transaksi","File JSON di server","localStorage di browser"],a:1,
+w:"PostgreSQL mendukung relasi (JOIN) dan transaksi yang menjamin data konsisten, misalnya pembayaran dan status pesanan berubah bersama. Fleksibilitas MongoDB justru bukan kebutuhan utama di sini. File JSON dan localStorage tidak aman dan tidak bisa dipakai banyak pengguna sekaligus."},
+{q:"Pewawancara bertanya: \"Why did your team choose Next.js?\" Jawaban mana yang menunjukkan cara berpikir senior?",
+o:["\"Because it's the most popular framework.\"","\"Because my lead decided it.\"","\"We needed SEO and a fast first load, and the team already knew React. The trade-off is extra complexity with server and client components.\"","\"Because it's the newest technology.\""],a:2,
+w:"Jawaban yang kuat menyebut kebutuhan (SEO, kecepatan), alasan konteks (tim sudah paham React), dan harga yang dibayar (kerumitan). Populer, perintah atasan, atau paling baru bukan alasan teknis."}
+]
+},
+{
+id: "t2", days: 5, title: "Scope dan closure",
+goals: [
+"Membedakan var, let, dan const",
+"Menjelaskan hoisting dan temporal dead zone",
+"Menjelaskan closure dan bug stale closure di React"
+],
+material: `
+<h3>Scope: di mana variabel terlihat</h3>
+<ul>
+<li><code>var</code> berlaku di seluruh <b>fungsi</b>, dan deklarasinya diangkat (hoisting) ke atas dengan nilai <code>undefined</code>.</li>
+<li><code>let</code> dan <code>const</code> berlaku di dalam <b>blok</b> <code>{ }</code>. Sebelum baris deklarasinya, variabel ada di <i>temporal dead zone</i>: mengaksesnya menghasilkan <code>ReferenceError</code>.</li>
+<li><code>const</code> mencegah variabel diisi ulang, tapi isi objek atau array tetap bisa diubah.</li>
+</ul>
+<pre><code>console.log(a); // undefined (var di-hoist)
+var a = 1;
+
+console.log(b); // ReferenceError (temporal dead zone)
+let b = 2;
+
+const user = { name: "Rani" };
+user.name = "Sari"; // boleh, objeknya diubah
+// user = {};       // TypeError, tidak boleh diisi ulang</code></pre>
+<h3>Closure</h3>
+<p>Fungsi mengingat variabel dari tempat ia dibuat, walaupun dipanggil di tempat lain. Setiap pemanggilan fungsi pembuat menghasilkan "ingatan" yang terpisah.</p>
+<pre><code>function makeCounter() {
+  let n = 0;
+  return () => ++n;
+}
+const a = makeCounter();
+const b = makeCounter();
+a(); // 1
+a(); // 2
+b(); // 1, b punya n sendiri</code></pre>
+<h3>Jebakan klasik: var di dalam loop</h3>
+<pre><code>for (var i = 0; i &lt; 3; i++) {
+  setTimeout(() => console.log(i), 0);
+}
+// 3 3 3: hanya ada satu i, dan nilainya sudah 3 saat callback jalan
+
+for (let i = 0; i &lt; 3; i++) {
+  setTimeout(() => console.log(i), 0);
+}
+// 0 1 2: let membuat i baru di setiap putaran</code></pre>
+<h3>Closure di React: stale state</h3>
+<p>Setiap render React adalah pemanggilan fungsi baru dengan nilai state-nya sendiri. Fungsi yang dibuat di render pertama akan selalu mengingat nilai dari render pertama.</p>
+<pre><code>const [count, setCount] = useState(0);
+useEffect(() => {
+  const id = setInterval(() => setCount(count + 1), 1000);
+  return () => clearInterval(id);
+}, []); // count yang diingat selalu 0, jadi hasilnya macet di 1
+
+// Perbaikan: pakai bentuk fungsi, yang selalu menerima nilai terbaru
+setCount(c => c + 1);</code></pre>
+<p class="tip">Sumber pendalaman: javascript.info, bab "Variable scope, closure".</p>`,
+questions: [
+{q:"Apa yang dicetak oleh kode ini?",code:"function makeCounter() {\n  let n = 0;\n  return () => ++n;\n}\nconst a = makeCounter();\nconst b = makeCounter();\na(); a(); b();\nconsole.log(a(), b());",
+o:["3 2","4 2","2 1","3 3"],a:0,
+w:"a dan b punya closure sendiri dengan n masing-masing. a dipanggil dua kali (n=2), lalu a() di console.log menjadi 3. b dipanggil sekali (n=1), lalu b() di console.log menjadi 2."},
+{q:"Apa yang dicetak oleh kode ini?",code:"for (var i = 0; i < 3; i++) {\n  setTimeout(() => console.log(i), 0);\n}",
+o:["0 1 2","3 3 3","0 0 0","undefined undefined undefined"],a:1,
+w:"var berlaku di seluruh fungsi, jadi hanya ada satu i. Callback setTimeout baru jalan setelah loop selesai, saat i sudah 3. Ketiga callback membaca i yang sama."},
+{q:"Apa hasil dari kode ini?",code:"console.log(x);\nvar x = 5;",
+o:["5","undefined","ReferenceError","null"],a:1,
+w:"Deklarasi var diangkat ke atas (hoisting), tapi pengisian nilainya tidak. Saat console.log jalan, x sudah ada dengan nilai undefined. Kalau memakai let, hasilnya ReferenceError karena temporal dead zone."},
+{q:"Apakah kode ini error?",code:"const config = { theme: \"light\" };\nconfig.theme = \"dark\";",
+o:["Ya, const tidak bisa diubah sama sekali","Tidak, const hanya mencegah variabel diisi ulang, isi objeknya tetap boleh diubah","Ya, harus memakai let","Tidak, tapi theme tetap \"light\""],a:1,
+w:"const mengunci ikatan variabel ke objek itu, bukan isi objeknya. config = {} akan error, tapi config.theme = \"dark\" boleh dan nilainya benar-benar berubah."},
+{q:"Komponen ini macet di angka 1. Apa penyebab dan perbaikan terbaiknya?",code:"const [count, setCount] = useState(0);\nuseEffect(() => {\n  const id = setInterval(() => setCount(count + 1), 1000);\n  return () => clearInterval(id);\n}, []);",
+o:["setInterval tidak bisa dipakai di React","Closure mengingat count = 0 dari render pertama; ganti menjadi setCount(c => c + 1)","useState harus diganti useRef","Harus menghapus return clearInterval"],a:1,
+w:"Karena dependency array kosong, effect hanya dibuat sekali dan closure-nya selalu melihat count = 0, sehingga setiap detik menyetel 0 + 1. Bentuk fungsi setCount(c => c + 1) selalu menerima nilai terbaru. Menghapus clearInterval justru membuat kebocoran interval."}
+]
+},
+{
+id: "t3", days: 5, title: "Asynchronous dan event loop",
+goals: [
+"Menebak urutan output kode yang mencampur sync, Promise, dan setTimeout",
+"Memilih antara await berurutan dan Promise.all",
+"Menangani error fetch dengan benar"
+],
+material: `
+<h3>Satu jalur, banyak antrean</h3>
+<p>JavaScript menjalankan kode di satu jalur (call stack). Pekerjaan yang harus menunggu, seperti timer atau request jaringan, diserahkan ke browser. Saat selesai, callback-nya dimasukkan ke antrean.</p>
+<ul>
+<li><b>Microtask queue:</b> callback Promise (<code>.then</code>, lanjutan setelah <code>await</code>).</li>
+<li><b>Task queue (macrotask):</b> <code>setTimeout</code>, event klik, dan sejenisnya.</li>
+</ul>
+<p>Aturannya: jalankan semua kode sinkron sampai habis, lalu <b>semua</b> microtask, baru satu macrotask, dan begitu seterusnya.</p>
+<pre><code>console.log("1");
+setTimeout(() => console.log("2"), 0);
+Promise.resolve().then(() => console.log("3"));
+console.log("4");
+// 1, 4, 3, 2</code></pre>
+<h3>async/await</h3>
+<p>Fungsi <code>async</code> selalu mengembalikan Promise. Kode sebelum <code>await</code> pertama berjalan langsung. Kode setelah <code>await</code> dilanjutkan sebagai microtask.</p>
+<pre><code>async function f() {
+  console.log("a");
+  await null;
+  console.log("b");
+}
+f();
+console.log("c");
+// a, c, b</code></pre>
+<h3>Berurutan atau paralel?</h3>
+<pre><code>// Berurutan: total waktu = jumlah ketiganya
+const u = await getUser();
+const p = await getPosts();
+const c = await getComments();
+
+// Paralel: total waktu = yang paling lama
+const [u2, p2, c2] = await Promise.all([getUser(), getPosts(), getComments()]);</code></pre>
+<p>Pakai berurutan hanya jika request berikutnya butuh hasil request sebelumnya. <code>Promise.all</code> langsung gagal jika satu gagal; pakai <code>Promise.allSettled</code> jika ingin tetap mendapat hasil yang berhasil.</p>
+<h3>Jebakan fetch</h3>
+<p><code>fetch</code> <b>tidak</b> melempar error untuk status 404 atau 500. Ia hanya gagal jika jaringan putus. Periksa <code>res.ok</code> sendiri.</p>
+<pre><code>const res = await fetch("/api/products");
+if (!res.ok) throw new Error("Request gagal: " + res.status);
+const data = await res.json();</code></pre>
+<h3>Kenapa halaman bisa "beku"</h3>
+<p>Karena hanya ada satu jalur, loop berat selama 3 detik membuat klik dan scroll tidak direspons selama itu. Solusinya memecah pekerjaan atau memindahkannya ke Web Worker.</p>
+<p class="tip">Tonton: "What the heck is the event loop anyway?" oleh Philip Roberts di YouTube.</p>`,
+questions: [
+{q:"Apa urutan output kode ini?",code:"console.log(\"1\");\nsetTimeout(() => console.log(\"2\"), 0);\nPromise.resolve().then(() => console.log(\"3\"));\nconsole.log(\"4\");",
+o:["1 2 3 4","1 4 2 3","1 4 3 2","1 3 4 2"],a:2,
+w:"Kode sinkron jalan dulu (1, 4). Setelah itu semua microtask, yaitu callback Promise (3). Baru kemudian macrotask setTimeout (2), walaupun delay-nya 0."},
+{q:"Apa urutan output kode ini?",code:"async function f() {\n  console.log(\"a\");\n  await null;\n  console.log(\"b\");\n}\nf();\nconsole.log(\"c\");",
+o:["a b c","a c b","c a b","b a c"],a:1,
+w:"Kode sebelum await berjalan langsung saat f() dipanggil (a). Saat bertemu await, sisa fungsi ditunda menjadi microtask, jadi kode sinkron di luar lanjut (c). Setelah itu barulah lanjutan f berjalan (b)."},
+{q:"Kamu perlu mengambil data user, notifikasi, dan pengaturan dari tiga API yang tidak saling bergantung. Cara mana yang paling cepat?",
+o:["Tiga await berurutan","await Promise.all([...]) untuk ketiganya","Memakai setTimeout untuk masing-masing","Tiga fetch tanpa await sama sekali lalu langsung memakai hasilnya"],a:1,
+w:"Promise.all menjalankan ketiganya bersamaan, sehingga total waktunya sama dengan request yang paling lama. Await berurutan menjumlahkan waktunya. Tanpa await, yang kamu dapat adalah Promise, bukan datanya."},
+{q:"Server membalas status 404. Apa yang terjadi dengan kode ini?",code:"try {\n  const res = await fetch(\"/api/item/99\");\n  const data = await res.json();\n} catch (e) {\n  showError();\n}",
+o:["fetch melempar error, jadi showError() terpanggil","fetch tidak melempar error untuk 404; kode harus memeriksa res.ok sendiri","Browser otomatis mencoba ulang request","res.json() selalu mengembalikan null"],a:1,
+w:"fetch hanya gagal (reject) untuk masalah jaringan. Untuk 404 atau 500, fetch tetap berhasil dengan res.ok = false. Tanpa pemeriksaan res.ok, error tidak tertangkap dan kode bisa memproses respons error seolah-olah data valid."},
+{q:"Sebuah fungsi menghitung data selama 3 detik di main thread. Apa yang dialami pengguna?",
+o:["Tidak ada, karena JavaScript berjalan paralel","Halaman beku: klik dan scroll tidak direspons sampai perhitungan selesai","Browser otomatis memindahkannya ke background","Hanya animasi CSS yang berhenti"],a:1,
+w:"JavaScript di halaman berjalan di satu jalur. Selama perhitungan, event loop tidak bisa memproses klik atau render ulang. Solusinya memecah pekerjaan menjadi bagian kecil atau memakai Web Worker. Ini juga yang membuat skor INP buruk."},
+{q:"Apa yang dikembalikan oleh fungsi async ini?",code:"async function getName() {\n  return \"Rani\";\n}",
+o:["String \"Rani\"","Promise yang selesai dengan nilai \"Rani\"","undefined","Error, karena tidak ada await"],a:1,
+w:"Fungsi async selalu mengembalikan Promise, walaupun yang di-return adalah nilai biasa. Untuk mendapat \"Rani\" kamu perlu await getName() atau getName().then(...). Fungsi async tidak wajib berisi await."}
+]
+},
+{
+id: "t4", days: 4, title: "this dan module",
+goals: [
+"Menentukan nilai this dari cara fungsi dipanggil",
+"Menulis import dan export dengan benar",
+"Menjelaskan tree shaking dan code splitting"
+],
+material: `
+<h3>Nilai this ditentukan oleh cara memanggil</h3>
+<ul>
+<li><code>obj.method()</code>: <code>this</code> adalah <code>obj</code>.</li>
+<li>Fungsi biasa yang dipanggil sendirian, <code>f()</code>: di ES module dan strict mode, <code>this</code> adalah <code>undefined</code>.</li>
+<li><code>f.call(x)</code>, <code>f.apply(x)</code>, <code>f.bind(x)</code>: <code>this</code> adalah <code>x</code>.</li>
+<li><code>new Foo()</code>: <code>this</code> adalah objek baru.</li>
+<li><b>Arrow function tidak punya this sendiri.</b> Ia memakai <code>this</code> dari tempat ia ditulis.</li>
+</ul>
+<pre><code>const user = {
+  name: "Rani",
+  hi() { return this.name; },
+};
+user.hi();          // "Rani"
+const f = user.hi;
+f();                // TypeError di module: this undefined
+
+const g = user.hi.bind(user);
+g();                // "Rani"</code></pre>
+<p>Karena itu arrow function nyaman untuk callback di dalam method, misalnya <code>setTimeout(() =&gt; this.save(), 100)</code>: <code>this</code> tetap merujuk ke objek pemilik method.</p>
+<h3>Module: import dan export</h3>
+<pre><code>// Button.js
+export default function Button() {}
+export const SIZES = ["sm", "md"];
+
+// Pemakai
+import Button, { SIZES } from "./Button";</code></pre>
+<p>Default export di-import tanpa kurung kurawal dan boleh diberi nama apa saja. Named export di-import dengan kurung kurawal dan namanya harus sama.</p>
+<h3>Tree shaking dan code splitting</h3>
+<ul>
+<li><b>Tree shaking:</b> bundler membuang kode yang tidak dipakai. Ini hanya bisa dilakukan dengan ES module (<code>import</code>/<code>export</code>) karena struktur import-nya bisa dianalisis tanpa menjalankan kode. Contoh: <code>import { debounce } from "lodash-es"</code> hanya membawa <code>debounce</code>.</li>
+<li><b>Code splitting:</b> kode dipecah dan dimuat saat dibutuhkan, dengan <code>import()</code> dinamis. Di Next.js: <code>dynamic(() =&gt; import("./Chart"))</code>. Kode grafik tidak ikut di JavaScript awal.</li>
+</ul>`,
+questions: [
+{q:"Kode ini ada di dalam ES module. Apa yang terjadi saat f() dipanggil?",code:"const user = {\n  name: \"Rani\",\n  hi() { return this.name; },\n};\nconst f = user.hi;\nf();",
+o:["Mengembalikan \"Rani\"","TypeError, karena this bernilai undefined","Mengembalikan string kosong","Mengembalikan nama dari window"],a:1,
+w:"this ditentukan oleh cara memanggil, bukan tempat fungsi ditulis. f() dipanggil tanpa objek di depannya. Di module (selalu strict mode), this menjadi undefined, dan undefined.name melempar TypeError. Perbaikannya: user.hi() atau user.hi.bind(user)."},
+{q:"Kenapa arrow function nyaman dipakai sebagai callback di dalam method, misalnya setTimeout(() => this.save(), 100)?",
+o:["Arrow function lebih cepat dijalankan","Arrow function tidak punya this sendiri, jadi memakai this milik method di sekitarnya","Arrow function otomatis di-bind ke window","Arrow function tidak bisa mengakses this sama sekali"],a:1,
+w:"Arrow function mengambil this dari tempat ia ditulis (lexical this). Di dalam method, itu adalah objek pemilik method. Fungsi biasa sebagai callback akan kehilangan this karena dipanggil oleh setTimeout tanpa objek."},
+{q:"File Button.js berisi export default function Button() {} dan export const SIZES = [...]. Import mana yang benar?",
+o:["import { Button, SIZES } from \"./Button\"","import Button, { SIZES } from \"./Button\"","import Button, SIZES from \"./Button\"","import * as Button from \"./Button\"; Button()"],a:1,
+w:"Default export di-import tanpa kurung kurawal, named export dengan kurung kurawal. Pilihan pertama mencari named export bernama Button yang tidak ada. Pilihan terakhir menghasilkan objek module, bukan fungsi yang bisa langsung dipanggil."},
+{q:"Kamu hanya butuh fungsi debounce. Import mana yang membuat bundle paling kecil?",
+o:["import _ from \"lodash\"","import { debounce } from \"lodash-es\"","const _ = require(\"lodash\")","Menyalin seluruh file lodash ke project"],a:1,
+w:"lodash-es memakai ES module, sehingga bundler bisa melakukan tree shaking dan hanya membawa debounce beserta dependensinya. Import default lodash dan require (CommonJS) membawa seluruh library karena bundler tidak bisa memastikan bagian mana yang dipakai."},
+{q:"Apa manfaat utama kode ini di Next.js?",code:"const Chart = dynamic(() => import(\"./Chart\"));",
+o:["Membuat Chart di-render di server","Code splitting: kode Chart dimuat terpisah saat dibutuhkan, sehingga JavaScript awal lebih kecil","Membuat Chart lebih cepat menggambar","Mencegah Chart di-cache"],a:1,
+w:"import() dinamis memecah kode Chart menjadi file terpisah yang dimuat saat komponen itu dipakai. Halaman jadi lebih cepat interaktif karena JavaScript awal berkurang. Ini cocok untuk komponen besar yang tidak langsung terlihat."}
+]
+},
+{
+id: "t5", days: 6, title: "Cara kerja browser dan performa",
+goals: [
+"Menjelaskan langkah dari URL sampai piksel di layar",
+"Menjelaskan LCP, INP, dan CLS beserta batas \"baik\"-nya",
+"Memilih perbaikan yang tepat untuk tiap masalah performa"
+],
+material: `
+<h3>Dari URL sampai piksel</h3>
+<ol>
+<li>DNS mencari alamat server, lalu browser mengirim request.</li>
+<li>HTML diterima dan diurai menjadi <b>DOM</b>.</li>
+<li>CSS diurai menjadi <b>CSSOM</b>. DOM + CSSOM = render tree.</li>
+<li><b>Layout</b>: menghitung posisi dan ukuran setiap elemen.</li>
+<li><b>Paint</b> dan <b>composite</b>: menggambar piksel ke layar.</li>
+</ol>
+<p>CSS bersifat <i>render-blocking</i>: halaman tidak digambar sebelum CSS selesai dimuat. <code>&lt;script&gt;</code> biasa di <code>&lt;head&gt;</code> menghentikan penguraian HTML sampai script diunduh dan dijalankan. Atribut <code>defer</code> membuat script diunduh paralel dan dijalankan setelah HTML selesai diurai.</p>
+<h3>Layout thrashing</h3>
+<p>Membaca ukuran elemen (<code>offsetHeight</code>, <code>getBoundingClientRect</code>) setelah mengubah style memaksa browser menghitung layout saat itu juga. Jika dilakukan bergantian di dalam loop, layout dihitung berulang kali. Solusinya: baca semua dulu, baru tulis semua.</p>
+<h3>Core Web Vitals</h3>
+<div class="tbl"><table>
+<tr><th>Metrik</th><th>Mengukur</th><th>Baik</th><th>Perbaikan umum</th></tr>
+<tr><td>LCP</td><td>Kapan konten terbesar (biasanya gambar hero atau judul) tampil</td><td>≤ 2,5 detik</td><td>Gambar dioptimasi dan diprioritaskan, SSR/SSG, kurangi JS dan CSS yang memblokir</td></tr>
+<tr><td>INP</td><td>Seberapa cepat halaman merespons interaksi</td><td>≤ 200 ms</td><td>Pecah tugas JS yang panjang, kurangi re-render</td></tr>
+<tr><td>CLS</td><td>Seberapa banyak tampilan bergeser tak terduga</td><td>≤ 0,1</td><td>Beri width/height atau aspect-ratio pada gambar, sediakan ruang untuk iklan dan banner</td></tr>
+</table></div>
+<p>Di Next.js, gambar hero yang menjadi LCP bisa diberi properti prioritas pada komponen <code>Image</code> supaya dimuat lebih dulu.</p>
+<h3>Alat ukur</h3>
+<ul>
+<li><b>Lighthouse</b> di Chrome DevTools: skor dan saran perbaikan.</li>
+<li><b>Performance panel</b>: melihat tugas panjang (long task) dan layout yang berulang.</li>
+<li>Data pengguna nyata: PageSpeed Insights.</li>
+</ul>
+<p class="tip">Latihan: jalankan Lighthouse pada satu halaman di kantor, perbaiki satu temuan, dan jadikan itu cerita STAR.</p>`,
+questions: [
+{q:"Apa yang diukur oleh LCP (Largest Contentful Paint)?",
+o:["Waktu sampai seluruh JavaScript selesai dijalankan","Waktu sampai elemen konten terbesar di layar tampil","Ukuran file terbesar di halaman","Jumlah elemen di DOM"],a:1,
+w:"LCP mengukur kapan elemen konten terbesar yang terlihat (biasanya gambar hero atau blok judul) selesai digambar. Ini mewakili kapan pengguna merasa halaman \"sudah muncul\". Batas baiknya 2,5 detik atau kurang."},
+{q:"Saat halaman dimuat, teks tiba-tiba turun ke bawah karena gambar di atasnya baru selesai dimuat. Metrik apa yang memburuk dan apa perbaikannya?",
+o:["LCP; kompres gambar","CLS; beri width dan height (atau aspect-ratio) pada gambar","INP; pakai Web Worker","CLS; hapus semua gambar"],a:1,
+w:"Pergeseran tampilan tak terduga diukur oleh CLS. Browser tidak tahu tinggi gambar sebelum gambar dimuat, jadi tidak menyediakan ruang. Dengan width/height atau aspect-ratio, ruangnya sudah disiapkan sejak awal. Menghapus gambar bukan solusi yang masuk akal."},
+{q:"Sebuah <script src=\"app.js\"> besar diletakkan di <head> tanpa atribut apa pun. Apa dampaknya dan perbaikannya?",
+o:["Tidak ada dampak","Penguraian HTML berhenti sampai script diunduh dan dijalankan; tambahkan defer","Script dijalankan dua kali; tambahkan async","CSS tidak bisa dimuat; pindahkan CSS ke bawah"],a:1,
+w:"Script biasa memblokir parser HTML karena script bisa mengubah dokumen. Dengan defer, script diunduh paralel dan dijalankan setelah HTML selesai diurai, sesuai urutan. Ini mempercepat tampilan pertama."},
+{q:"Berapa batas INP (Interaction to Next Paint) yang dianggap \"baik\"?",
+o:["≤ 50 ms","≤ 200 ms","≤ 1 detik","≤ 2,5 detik"],a:1,
+w:"INP dianggap baik jika 200 ms atau kurang, perlu perbaikan sampai 500 ms, dan buruk di atas itu. Angka 2,5 detik adalah batas LCP, bukan INP."},
+{q:"Kode ini membuat halaman tersendat. Kenapa?",code:"items.forEach(el => {\n  const h = el.offsetHeight;      // baca\n  el.style.height = h + 10 + \"px\"; // tulis\n});",
+o:["forEach lebih lambat dari for","Layout thrashing: baca dan tulis yang bergantian memaksa browser menghitung layout di setiap putaran","offsetHeight selalu 0","style.height tidak boleh diubah lewat JavaScript"],a:1,
+w:"Setiap kali style diubah lalu ukuran dibaca lagi, browser harus menghitung ulang layout saat itu juga. Di dalam loop, ini terjadi berkali-kali. Perbaikannya: baca semua tinggi dulu ke array, lalu tulis semuanya."},
+{q:"Skor LCP buruk karena gambar hero besar dimuat terlambat. Perbaikan mana yang paling tepat?",
+o:["Memberi gambar loading=\"lazy\"","Mengecilkan dan mengonversi gambar ke format modern, lalu memprioritaskan pemuatannya","Menambahkan animasi fade-in","Memindahkan gambar ke dalam iframe"],a:1,
+w:"Gambar hero harus dimuat secepat mungkin: ukurannya diperkecil, formatnya modern (misalnya WebP atau AVIF), dan diprioritaskan (preload atau properti prioritas di next/image). loading=\"lazy\" justru menunda gambar yang terlihat di layar pertama, sehingga LCP makin buruk."}
+]
+},
+{
+id: "t6", days: 6, title: "HTTP dan API",
+goals: [
+"Memilih method dan status code yang tepat",
+"Menjelaskan CORS, autentikasi, dan otorisasi",
+"Menjelaskan cookie httpOnly dan header caching"
+],
+material: `
+<h3>Method dan idempotensi</h3>
+<div class="tbl"><table>
+<tr><th>Method</th><th>Kegunaan</th><th>Idempoten?</th></tr>
+<tr><td>GET</td><td>Mengambil data</td><td>Ya</td></tr>
+<tr><td>POST</td><td>Membuat data baru</td><td>Tidak</td></tr>
+<tr><td>PUT</td><td>Mengganti data seluruhnya</td><td>Ya</td></tr>
+<tr><td>PATCH</td><td>Mengubah sebagian data</td><td>Tidak dijamin</td></tr>
+<tr><td>DELETE</td><td>Menghapus data</td><td>Ya</td></tr>
+</table></div>
+<p><b>Idempoten</b> artinya mengirim request yang sama berkali-kali menghasilkan keadaan server yang sama dengan mengirim sekali. POST dua kali bisa membuat dua pesanan.</p>
+<h3>Status code yang sering dipakai</h3>
+<ul>
+<li><b>200</b> OK, <b>201</b> Created (data baru dibuat), <b>204</b> No Content.</li>
+<li><b>301</b> pindah permanen, <b>304</b> Not Modified (pakai versi cache).</li>
+<li><b>400</b> request tidak valid, <b>401</b> belum login atau token tidak valid, <b>403</b> sudah login tapi tidak berhak, <b>404</b> tidak ditemukan, <b>422</b> validasi gagal.</li>
+<li><b>500</b> error di server, <b>503</b> server sedang tidak tersedia.</li>
+</ul>
+<h3>Autentikasi dan otorisasi</h3>
+<p><b>Authentication</b>: siapa kamu (login). <b>Authorization</b>: apa yang boleh kamu lakukan (hak akses).</p>
+<h3>Cookie, session, dan token</h3>
+<ul>
+<li>Cookie dengan atribut <code>HttpOnly</code> tidak bisa dibaca JavaScript, sehingga token tidak bisa dicuri lewat serangan XSS. Tambahkan <code>Secure</code> dan <code>SameSite</code> untuk membatasi pengiriman lintas situs (perlindungan CSRF).</li>
+<li>Token di <code>localStorage</code> bisa dibaca oleh JavaScript apa pun yang berjalan di halaman.</li>
+</ul>
+<h3>CORS</h3>
+<p>Browser melarang JavaScript dari satu origin membaca respons dari origin lain, kecuali server mengizinkan lewat header seperti <code>Access-Control-Allow-Origin</code>. Aturan ini ditegakkan oleh <b>browser</b>, karena itu request yang sama berhasil di Postman atau curl. Perbaikannya ada di server, bukan di frontend.</p>
+<h3>Caching</h3>
+<ul>
+<li><code>Cache-Control: no-store</code>: jangan disimpan sama sekali (data sensitif).</li>
+<li><code>Cache-Control: public, max-age=31536000, immutable</code>: simpan setahun. Cocok untuk file yang namanya mengandung hash, seperti <code>app.3f9a2c.js</code>, karena isi baru selalu mendapat nama baru.</li>
+</ul>`,
+questions: [
+{q:"Pengguna sudah login sebagai staf biasa, lalu membuka endpoint khusus admin. Status code yang tepat adalah...",
+o:["401 Unauthorized","403 Forbidden","404 Not Found","500 Internal Server Error"],a:1,
+w:"Server tahu siapa penggunanya (sudah terautentikasi), tapi pengguna tidak punya hak akses, jadi 403. Status 401 dipakai saat pengguna belum login atau tokennya tidak valid. Beberapa sistem sengaja memakai 404 untuk menyembunyikan keberadaan resource, tapi jawaban standarnya 403."},
+{q:"Endpoint POST /orders berhasil membuat pesanan baru. Status code yang paling tepat adalah...",
+o:["200 OK","201 Created","204 No Content","302 Found"],a:1,
+w:"201 Created menyatakan bahwa resource baru berhasil dibuat, biasanya disertai data atau lokasi resource baru. 200 tidak salah total, tapi kurang spesifik. 204 berarti tidak ada isi respons, dan 302 adalah redirect."},
+{q:"Pengguna menekan tombol \"Bayar\" dua kali karena koneksi lambat. Method mana yang berisiko membuat dua transaksi jika server tidak memberi perlindungan tambahan?",
+o:["GET","PUT","POST","DELETE"],a:2,
+w:"POST tidak idempoten: setiap request bisa membuat data baru. PUT dan DELETE idempoten, karena mengulangnya menghasilkan keadaan yang sama. Untuk pembayaran, server biasanya memakai idempotency key supaya POST ganda hanya diproses sekali."},
+{q:"Request ke API berhasil di Postman, tapi gagal di browser dengan pesan CORS. Kenapa?",
+o:["Postman memakai internet yang lebih cepat","CORS ditegakkan oleh browser; server harus mengirim header yang mengizinkan origin frontend","API-nya rusak","Harus memakai axios, bukan fetch"],a:1,
+w:"CORS adalah aturan keamanan browser untuk melindungi pengguna. Postman bukan browser, jadi tidak menerapkannya. Perbaikannya di server, misalnya mengirim Access-Control-Allow-Origin untuk origin frontend. Mengganti library di frontend tidak mengubah apa pun."},
+{q:"Kenapa token login lebih aman disimpan di cookie HttpOnly daripada di localStorage?",
+o:["Cookie lebih cepat dibaca","JavaScript tidak bisa membaca cookie HttpOnly, sehingga token tidak bisa dicuri lewat XSS","localStorage terhapus setiap refresh","Cookie tidak pernah dikirim ke server"],a:1,
+w:"Jika ada skrip berbahaya di halaman (XSS), skrip itu bisa membaca localStorage dan mencuri token. Cookie HttpOnly tidak bisa diakses JavaScript sama sekali. Cookie tetap perlu SameSite dan Secure untuk perlindungan CSRF. localStorage tidak terhapus saat refresh."},
+{q:"File app.3f9a2c.js (nama mengandung hash isi) akan di-deploy. Header caching mana yang paling tepat?",
+o:["Cache-Control: no-store","Cache-Control: public, max-age=31536000, immutable","Tidak perlu header apa pun","Cache-Control: max-age=0"],a:1,
+w:"Karena nama file berubah setiap kali isinya berubah, file lama aman disimpan selamanya. Browser tidak perlu mengecek ulang ke server. no-store dan max-age=0 membuang manfaat cache dan membuat pengguna mengunduh ulang file yang sama."},
+{q:"Apa perbedaan authentication dan authorization?",
+o:["Keduanya sama","Authentication memastikan siapa pengguna; authorization menentukan apa yang boleh dilakukannya","Authentication untuk API, authorization untuk halaman web","Authorization selalu terjadi sebelum authentication"],a:1,
+w:"Authentication menjawab \"siapa kamu?\" (misalnya login). Authorization menjawab \"apa yang boleh kamu lakukan?\" (misalnya hanya admin yang boleh menghapus). Authorization butuh identitas, jadi biasanya terjadi setelah authentication."}
+]
+},
+{
+id: "t7", days: 7, title: "Strategi rendering di Next.js",
+goals: [
+"Memilih CSR, SSR, SSG, atau ISR untuk sebuah halaman beserta alasannya",
+"Menjelaskan hydration dan penyebab hydration mismatch",
+"Menjelaskan batas Server Component dan Client Component"
+],
+material: `
+<p>Pertanyaan intinya: <b>di mana dan kapan HTML dibuat?</b></p>
+<div class="tbl"><table>
+<tr><th>Strategi</th><th>HTML dibuat</th><th>Kelebihan</th><th>Kekurangan</th><th>Contoh</th></tr>
+<tr><td>CSR</td><td>Di browser, setiap kali dibuka</td><td>Server ringan, sangat interaktif</td><td>Halaman awal kosong, SEO lemah</td><td>Dashboard di balik login</td></tr>
+<tr><td>SSR</td><td>Di server, setiap request</td><td>Konten langsung tampil, data selalu baru</td><td>Server bekerja di setiap request</td><td>Hasil pencarian, halaman personal</td></tr>
+<tr><td>SSG</td><td>Di server, saat build</td><td>Sangat cepat, bisa dari CDN</td><td>Data tidak otomatis baru</td><td>Blog, dokumentasi</td></tr>
+<tr><td>ISR</td><td>Saat build, lalu diperbarui berkala</td><td>Cepat seperti SSG, data cukup segar</td><td>Data bisa terlambat sesuai jeda revalidate</td><td>Katalog produk</td></tr>
+</table></div>
+<h3>Hydration</h3>
+<p>Dengan SSR atau SSG, browser menerima HTML yang sudah jadi. Setelah JavaScript dimuat, React "menghidupkan" HTML itu dengan memasang event handler dan state. Proses ini disebut <b>hydration</b>.</p>
+<p><b>Hydration mismatch</b> terjadi jika hasil render di server berbeda dengan render pertama di browser. Penyebab umum: <code>Date.now()</code>, <code>Math.random()</code>, atau membaca <code>window</code> dan <code>localStorage</code> langsung saat render. Solusinya: baca nilai khusus browser di dalam <code>useEffect</code>.</p>
+<h3>Server Component dan Client Component (App Router)</h3>
+<ul>
+<li>Secara default komponen adalah <b>Server Component</b>: berjalan di server, boleh langsung mengambil data atau membaca database, dan kodenya tidak dikirim ke browser.</li>
+<li>Server Component tidak bisa memakai <code>useState</code>, <code>useEffect</code>, atau event handler seperti <code>onClick</code>, karena tidak ada interaksi di server.</li>
+<li>Komponen yang butuh interaksi diberi <code>"use client"</code> di baris pertama. Semua yang di-import olehnya ikut menjadi kode client.</li>
+<li>Prinsipnya: letakkan <code>"use client"</code> serendah mungkin di pohon komponen, misalnya hanya pada tombol atau form, bukan di layout utama.</li>
+</ul>
+<pre><code>// app/products/page.tsx (Server Component)
+export default async function Page() {
+  const products = await getProducts(); // langsung di server
+  return &lt;ProductList products={products} /&gt;;
+}
+
+// AddToCart.tsx
+"use client";
+export function AddToCart() {
+  const [qty, setQty] = useState(1);
+  return &lt;button onClick={() =&gt; setQty(qty + 1)}&gt;Tambah&lt;/button&gt;;
+}</code></pre>
+<p class="tip">Detail cara caching dan revalidate berubah antar versi Next.js. Selalu cek dokumentasi resmi untuk versi yang dipakai di kantormu.</p>`,
+questions: [
+{q:"Halaman artikel blog yang isinya jarang berubah dan harus cepat serta bagus untuk SEO. Strategi yang paling tepat adalah...",
+o:["CSR","SSR di setiap request","SSG","Memuat artikel lewat useEffect"],a:2,
+w:"Konten yang jarang berubah paling efisien dibuat sekali saat build lalu disajikan dari CDN. SSR membuat server bekerja ulang untuk konten yang sama. CSR dan useEffect membuat HTML awal kosong, buruk untuk SEO."},
+{q:"Dashboard admin di balik login, sangat interaktif, dan tidak perlu muncul di Google. Pernyataan mana yang paling tepat?",
+o:["Wajib SSG","CSR sudah memadai karena SEO tidak dibutuhkan dan halaman sangat interaktif","Tidak boleh memakai React","Harus ISR dengan revalidate 1 detik"],a:1,
+w:"Keuntungan utama SSR atau SSG adalah SEO dan konten awal yang cepat untuk pengunjung publik. Dashboard pribadi tidak butuh SEO, jadi CSR adalah pilihan yang wajar dan sederhana. SSG tidak cocok untuk data pribadi yang berbeda tiap pengguna."},
+{q:"Katalog berisi 50.000 produk. Harga dan stok berubah beberapa kali sehari, dan keterlambatan beberapa menit masih bisa diterima. Strategi yang paling tepat adalah...",
+o:["SSG penuh, build ulang setiap ada perubahan","ISR dengan revalidate berkala","CSR saja","SSR tanpa cache untuk setiap request"],a:1,
+w:"ISR memberi kecepatan halaman statis sekaligus memperbarui halaman secara berkala tanpa build ulang 50.000 halaman. SSG penuh berarti build yang sangat lama. SSR tanpa cache membebani server, dan CSR buruk untuk SEO produk."},
+{q:"Apa yang dimaksud dengan hydration?",
+o:["Proses mengompres gambar","React memasang event handler dan state ke HTML yang sudah di-render server, sehingga halaman menjadi interaktif","Proses mengambil data dari API","Proses membersihkan cache"],a:1,
+w:"Server mengirim HTML yang sudah jadi sehingga konten cepat terlihat. Setelah JavaScript dimuat, React mencocokkan HTML itu dengan komponennya dan memasang interaktivitas. Itulah hydration."},
+{q:"Komponen ini menampilkan peringatan hydration mismatch. Apa penyebabnya?",code:"export default function Clock() {\n  return <p>{new Date().toLocaleTimeString()}</p>;\n}",
+o:["Komponen tidak memakai useState","Waktu saat render di server berbeda dengan waktu saat render pertama di browser","toLocaleTimeString tidak didukung browser","Tag <p> tidak boleh dipakai"],a:1,
+w:"Server merender jam pada satu detik, browser merender ulang sedikit kemudian dengan hasil berbeda. React melihat HTML yang tidak cocok. Solusinya: tampilkan waktu setelah komponen terpasang, misalnya dengan useEffect."},
+{q:"Kenapa useState tidak bisa dipakai di Server Component?",
+o:["Karena useState sudah usang","Karena Server Component berjalan di server tanpa interaksi pengguna, sehingga tidak ada state yang berubah","Karena useState hanya untuk TypeScript","Bisa, asal di-import dari next"],a:1,
+w:"Server Component dirender di server lalu hasilnya dikirim. Tidak ada klik atau ketikan di sana, dan kodenya tidak dijalankan di browser. Untuk state dan event, komponen itu harus menjadi Client Component dengan \"use client\"."},
+{q:"Kamu ingin JavaScript yang dikirim ke browser sekecil mungkin. Di mana sebaiknya \"use client\" diletakkan?",
+o:["Di root layout supaya semua komponen bisa interaktif","Serendah mungkin di pohon komponen, hanya pada bagian yang butuh interaksi","Di setiap file","Tidak perlu dipakai sama sekali"],a:1,
+w:"\"use client\" menjadikan file itu dan semua yang di-import-nya kode client. Jika diletakkan di layout, hampir seluruh aplikasi ikut dikirim ke browser. Dengan meletakkannya hanya di tombol atau form, sisanya tetap Server Component yang tidak menambah JavaScript."}
+]
+},
+{
+id: "t8", days: 5, title: "State management di React",
+goals: [
+"Menentukan jenis state dan tempat menyimpannya",
+"Menghindari state turunan dan mutasi langsung",
+"Memakai key yang benar di list"
+],
+material: `
+<h3>Empat jenis state</h3>
+<div class="tbl"><table>
+<tr><th>Jenis</th><th>Contoh</th><th>Alat</th></tr>
+<tr><td>Lokal</td><td>Isi input, modal terbuka</td><td><code>useState</code>, <code>useReducer</code></td></tr>
+<tr><td>Global UI</td><td>Tema, pengguna yang login</td><td>Context, Zustand, Redux</td></tr>
+<tr><td>Server state</td><td>Data dari API</td><td>TanStack Query, SWR, atau fetch di Server Component</td></tr>
+<tr><td>URL state</td><td>Filter, halaman, kata pencarian</td><td>Query parameter</td></tr>
+</table></div>
+<p>Data dari API punya kebutuhan khusus: cache, loading, error, dan refresh. Library server state menangani semuanya. Menyalin data API ke Redux atau Context membuatmu menulis ulang semua itu sendiri.</p>
+<p>State yang perlu bisa dibagikan lewat link atau bertahan saat refresh, seperti filter pencarian, sebaiknya disimpan di URL.</p>
+<h3>Jangan simpan yang bisa dihitung</h3>
+<pre><code>// Kurang tepat: state turunan + effect
+const [fullName, setFullName] = useState("");
+useEffect(() => setFullName(first + " " + last), [first, last]);
+
+// Lebih tepat: hitung saat render
+const fullName = first + " " + last;</code></pre>
+<p>State turunan menambah render ekstra dan berisiko tidak sinkron. Baca "You Might Not Need an Effect" di react.dev.</p>
+<h3>Jangan mutasi state</h3>
+<pre><code>items.push(newItem);
+setItems(items);            // referensi sama, React bisa melewatkan render
+
+setItems([...items, newItem]); // array baru, React tahu ada perubahan</code></pre>
+<h3>Key di list</h3>
+<p>React memakai <code>key</code> untuk mencocokkan item antar render. Jika key berupa index dan urutan berubah (hapus, sisip, urutkan), state milik item bisa "pindah" ke item lain, misalnya isi input tertukar. Pakai id yang stabil.</p>
+<h3>Prop drilling</h3>
+<p>Mengoper props melewati banyak level yang tidak memakainya disebut prop drilling. Untuk data yang dipakai di banyak tempat, seperti tema atau pengguna, Context adalah solusi bawaan React.</p>`,
+questions: [
+{q:"Pengguna ingin bisa mengirim link hasil filter produk (kategori dan harga) ke temannya. Di mana state filter sebaiknya disimpan?",
+o:["useState di komponen halaman","Query parameter di URL","localStorage","Variabel global di window"],a:1,
+w:"Hanya URL yang ikut terkirim saat link dibagikan, dan URL juga bertahan saat refresh atau tombol back. useState hilang saat refresh, localStorage hanya ada di browser pengirim, dan variabel global tidak bertahan sama sekali."},
+{q:"Daftar produk diambil dari API, perlu di-cache, dan diperbarui saat pengguna kembali ke tab. Pendekatan yang paling tepat adalah...",
+o:["Menyimpannya di Redux dan menulis logika cache sendiri","Memakai library server state seperti TanStack Query atau SWR","Menyimpannya di Context","Mengambil ulang di setiap render"],a:1,
+w:"Library server state sudah menangani cache, status loading dan error, deduplikasi request, serta refresh saat tab aktif. Redux dan Context bisa dipakai, tapi kamu harus membangun semua itu sendiri. Fetch di setiap render menyebabkan request tanpa henti."},
+{q:"Mana cara terbaik menampilkan fullName dari state first dan last?",
+o:["Simpan fullName di useState dan perbarui lewat useEffect","Hitung langsung saat render: const fullName = first + \" \" + last","Simpan fullName di Context","Simpan fullName di localStorage"],a:1,
+w:"fullName bisa dihitung dari state yang sudah ada, jadi tidak perlu menjadi state sendiri. Menyimpannya lewat useEffect menambah render ekstra dan bisa menampilkan nilai lama sesaat. Prinsipnya: jangan menyimpan sesuatu yang bisa dihitung."},
+{q:"Kenapa kode ini bisa gagal memperbarui tampilan?",code:"function addItem(newItem) {\n  items.push(newItem);\n  setItems(items);\n}",
+o:["push tidak bisa dipakai pada array","Array dimutasi langsung dan referensinya sama, sehingga React menganggap tidak ada perubahan","setItems harus dipanggil dua kali","items harus dideklarasikan dengan var"],a:1,
+w:"React membandingkan state lama dan baru berdasarkan referensi. Karena push mengubah array yang sama, setItems menerima referensi yang sama dan React bisa melewatkan render. Buat array baru: setItems([...items, newItem])."},
+{q:"Sebuah list memakai key={index}. Saat item pertama dihapus, isi input milik item lain ikut tertukar. Apa penyebab dan perbaikannya?",
+o:["React punya bug; tambahkan setTimeout","Key berbasis index berubah saat urutan berubah, sehingga state menempel ke item yang salah; pakai id unik yang stabil","Input harus dibuat uncontrolled","Harus memakai class component"],a:1,
+w:"Setelah item pertama dihapus, item kedua mendapat index 0. React mengira itu item lama dengan key 0 dan memberinya state milik item yang sudah dihapus. Id yang stabil membuat React mencocokkan item dengan benar."},
+{q:"Data tema (terang/gelap) dioper lewat props melalui 5 level komponen yang tidak memakainya. Solusi bawaan React yang paling tepat adalah...",
+o:["Menyalin tema ke setiap komponen dengan useState","Context","Menyimpannya di URL","Memakai useEffect di setiap level"],a:1,
+w:"Context dibuat untuk data yang dibutuhkan banyak komponen di level yang berbeda tanpa mengopernya satu per satu. useState di setiap komponen membuat banyak salinan yang bisa tidak sinkron. Tema bukan data yang perlu dibagikan lewat link."}
+]
+},
+{
+id: "t9", days: 7, title: "Database",
+goals: [
+"Mengenali dan memperbaiki masalah N+1",
+"Menjelaskan index, JOIN, relasi, dan transaksi",
+"Memilih SQL atau NoSQL beserta alasannya"
+],
+material: `
+<h3>Relasi</h3>
+<ul>
+<li><b>One-to-many</b>: satu user punya banyak order. Tabel <code>orders</code> menyimpan <code>user_id</code>.</li>
+<li><b>Many-to-many</b>: siswa dan kursus. Butuh tabel perantara (pivot), misalnya <code>enrollments(student_id, course_id)</code>.</li>
+</ul>
+<h3>JOIN</h3>
+<pre><code>-- INNER JOIN: hanya user yang punya order
+SELECT u.name, o.total FROM users u
+JOIN orders o ON o.user_id = u.id;
+
+-- LEFT JOIN: semua user, termasuk yang belum pernah order (kolom order bernilai NULL)
+SELECT u.name, o.total FROM users u
+LEFT JOIN orders o ON o.user_id = u.id;</code></pre>
+<h3>Index</h3>
+<p>Index seperti daftar isi buku. Tanpa index, database membaca setiap baris untuk mencari data. Pasang index pada kolom yang sering dipakai di <code>WHERE</code>, <code>JOIN</code>, atau <code>ORDER BY</code>. Harganya: proses tulis sedikit lebih lambat dan butuh ruang tambahan.</p>
+<pre><code>CREATE INDEX idx_orders_user_id ON orders (user_id);</code></pre>
+<h3>Masalah N+1</h3>
+<pre><code>// Laravel: 1 query untuk user + 1 query per user = 101 query untuk 100 user
+$users = User::all();
+foreach ($users as $user) { echo $user-&gt;orders-&gt;count(); }
+
+// Eager loading: 2 query saja
+$users = User::with('orders')-&gt;get();</code></pre>
+<h3>Transaksi</h3>
+<p>Transaksi menjamin beberapa perubahan berhasil semua atau gagal semua (atomic). Contoh: transfer saldo mengurangi akun A dan menambah akun B. Jika langkah kedua gagal, langkah pertama dibatalkan.</p>
+<h3>SQL injection</h3>
+<p>Jangan menggabungkan input pengguna ke dalam string query. Pakai parameter (prepared statement) atau query builder dan ORM yang melakukannya untukmu.</p>
+<pre><code>// Berbahaya
+db.query("SELECT * FROM users WHERE email = '" + email + "'");
+// Aman
+db.query("SELECT * FROM users WHERE email = $1", [email]);</code></pre>
+<h3>SQL atau NoSQL?</h3>
+<p>PostgreSQL adalah pilihan aman untuk sebagian besar aplikasi: relasi kuat, transaksi, dan juga mendukung kolom JSON. MongoDB cocok saat setiap dokumen punya bentuk yang berbeda-beda dan relasi antardata jarang dipakai, misalnya log kejadian atau katalog dengan atribut yang sangat beragam.</p>`,
+questions: [
+{q:"Halaman daftar 100 penulis menampilkan jumlah artikel setiap penulis, dan ternyata menjalankan 101 query. Apa nama masalahnya dan perbaikannya di Laravel?",
+o:["Deadlock; tambahkan transaksi","N+1 query; pakai eager loading seperti Author::with('articles')","Race condition; pakai cache","SQL injection; pakai parameter"],a:1,
+w:"Satu query mengambil penulis, lalu satu query tambahan untuk setiap penulis: 1 + N. Eager loading mengambil semua artikel terkait dalam satu query tambahan, sehingga totalnya hanya 2 query."},
+{q:"Query SELECT * FROM orders WHERE user_id = ? sangat sering dijalankan dan lambat di tabel berisi jutaan baris. Langkah pertama yang paling masuk akal adalah...",
+o:["Membuat index pada kolom user_id","Pindah ke MongoDB","Menambah RAM server tanpa menganalisis query","Menghapus data lama"],a:0,
+w:"Tanpa index, database harus memindai seluruh tabel. Index pada kolom di WHERE membuat pencarian langsung ke baris yang relevan. Pindah database atau menambah RAM tanpa analisis adalah solusi mahal yang belum tentu menyelesaikan masalahnya."},
+{q:"Kamu ingin daftar SEMUA user, termasuk yang belum pernah membuat order. JOIN mana yang tepat?",
+o:["INNER JOIN","LEFT JOIN dari users ke orders","CROSS JOIN","Tidak bisa dengan JOIN"],a:1,
+w:"LEFT JOIN mempertahankan semua baris dari tabel kiri (users). User tanpa order tetap muncul dengan kolom order bernilai NULL. INNER JOIN hanya menampilkan user yang punya order, dan CROSS JOIN memasangkan setiap user dengan setiap order."},
+{q:"Seorang siswa bisa mengambil banyak kursus, dan satu kursus diikuti banyak siswa. Bagaimana merancang tabelnya?",
+o:["Simpan daftar course_id dipisahkan koma di tabel students","Buat tabel perantara, misalnya enrollments(student_id, course_id)","Gabungkan students dan courses dalam satu tabel","Simpan student_id di tabel courses"],a:1,
+w:"Relasi many-to-many butuh tabel perantara yang menyimpan setiap pasangan. Daftar dipisahkan koma sulit dicari, di-index, dan dijaga konsistensinya. Menyimpan student_id di courses hanya mendukung satu siswa per kursus."},
+{q:"Fitur transfer saldo mengurangi saldo akun A lalu menambah saldo akun B. Apa yang menjamin uang tidak hilang jika langkah kedua gagal?",
+o:["Index","Transaksi database, sehingga kedua langkah berhasil bersama atau dibatalkan bersama","Cache","Menjalankan kedua query secara paralel"],a:1,
+w:"Transaksi bersifat atomic: semua perubahan di dalamnya diterapkan bersama, atau dibatalkan (rollback) bersama jika ada yang gagal. Tanpa transaksi, saldo A bisa berkurang tanpa saldo B bertambah."},
+{q:"Mana cara yang aman dari SQL injection?",
+o:["\"SELECT * FROM users WHERE email = '\" + email + \"'\"","Query dengan parameter, misalnya WHERE email = $1 dengan nilai [email]","Menghapus tanda kutip dari input lalu menggabungkannya","Mengubah input menjadi huruf kecil"],a:1,
+w:"Dengan parameter, database memperlakukan input sebagai data, bukan bagian dari perintah SQL. Menggabungkan string memungkinkan input seperti ' OR '1'='1 mengubah arti query. Membersihkan tanda kutip secara manual mudah terlewat dan bukan solusi yang andal."},
+{q:"Aplikasi menyimpan log kejadian dari banyak perangkat. Setiap jenis kejadian punya field yang berbeda-beda, dan data jarang di-JOIN. Pernyataan mana yang paling tepat?",
+o:["Harus PostgreSQL karena NoSQL tidak pernah dipakai di production","MongoDB adalah pilihan yang masuk akal karena struktur dokumennya fleksibel","Harus disimpan di localStorage","Tidak perlu database"],a:1,
+w:"Data yang bentuknya beragam dan jarang berelasi cocok dengan database dokumen seperti MongoDB. PostgreSQL dengan kolom JSONB juga bisa menangani kasus ini, tapi pernyataan bahwa NoSQL tidak pernah dipakai di production jelas salah."}
+]
+}
+]
+},
+{
+id: "eng", name: "Bahasa Inggris wawancara", short: "Inggris",
+targets: [
+{
+id: "e1", days: 4, title: "Frasa penyelamat",
+goals: [
+"Meminta pertanyaan diulang dengan sopan",
+"Mengulur waktu untuk berpikir tanpa terlihat panik",
+"Mengakui tidak tahu dengan cara yang profesional"
+],
+material: `
+<p>Frasa ini dipakai saat gugup, jadi harus keluar otomatis. Ucapkan setiap frasa dengan suara keras 5 kali sehari sampai lancar.</p>
+<h3>Saat tidak menangkap pertanyaan</h3>
+<ul>
+<li>"Sorry, could you repeat the question, please?"</li>
+<li>"Sorry, the connection broke up a little. Could you say that again?"</li>
+<li>"Could you speak a little more slowly, please?"</li>
+</ul>
+<h3>Memastikan pemahaman</h3>
+<ul>
+<li>"Just to make sure I understand, you're asking about..., right?"</li>
+<li>"Do you mean... or...?"</li>
+<li>"Could you give me an example of what you mean?"</li>
+</ul>
+<h3>Mengulur waktu</h3>
+<ul>
+<li>"That's a good question. Let me think for a moment."</li>
+<li>"Let me think about the best example."</li>
+</ul>
+<h3>Saat tidak tahu jawabannya</h3>
+<ul>
+<li>"I haven't worked with that directly, but my understanding is..."</li>
+<li>"I'm not sure, but here's how I would find out..."</li>
+</ul>
+<p>Jangan pura-pura tahu. Pewawancara lebih menghargai kejujuran yang disertai cara berpikir.</p>
+<h3>Saat salah bicara</h3>
+<ul>
+<li>"Sorry, let me rephrase that."</li>
+<li>"What I mean is..."</li>
+</ul>
+<p class="tip">Hindari "What?" atau "Huh?": terdengar kasar dalam bahasa Inggris. Selalu awali dengan "Sorry," atau "Could you...".</p>`,
+questions: [
+{q:"Kamu tidak mendengar pertanyaan pewawancara dengan jelas. Respons mana yang paling tepat?",
+o:["\"What?\"","\"Repeat.\"","\"Sorry, could you repeat the question, please?\"","\"I don't understand English.\""],a:2,
+w:"\"Sorry, could you repeat the question, please?\" sopan dan wajar. \"What?\" dan \"Repeat.\" terdengar kasar dalam konteks formal. Mengatakan tidak mengerti bahasa Inggris merusak kesan secara keseluruhan, padahal masalahnya hanya tidak mendengar."},
+{q:"Kamu butuh beberapa detik untuk memikirkan contoh yang bagus. Apa yang sebaiknya kamu katakan?",
+o:["Diam selama 20 detik","\"That's a good question. Let me think for a moment.\"","\"Next question, please.\"","\"Wait.\""],a:1,
+w:"Mengucapkan bahwa kamu sedang berpikir membuat jeda terasa wajar dan profesional. Diam lama tanpa penjelasan membuat pewawancara bingung. \"Wait.\" terdengar seperti perintah, dan meminta pertanyaan lain menghindari pertanyaan."},
+{q:"Pewawancara bertanya tentang GraphQL, dan kamu belum pernah memakainya. Jawaban terbaik adalah...",
+o:["\"Yes, I'm an expert in GraphQL.\"","\"No.\"","\"I haven't worked with GraphQL directly, but my understanding is that the client asks for exactly the data it needs. I've worked a lot with REST APIs.\"","\"GraphQL is not important.\""],a:2,
+w:"Jawaban ini jujur, menunjukkan pemahaman dasar, lalu mengarahkan ke pengalaman yang relevan. Mengaku ahli mudah terbongkar dengan satu pertanyaan lanjutan. \"No.\" menutup percakapan, dan meremehkan teknologi terdengar defensif."},
+{q:"Kamu ingin memastikan maksud pertanyaan sebelum menjawab. Kalimat mana yang benar?",
+o:["\"Just to make sure I understand, you're asking about how I manage state in large apps, right?\"","\"You ask what?\"","\"Your question is not clear.\"","\"I make sure you asking state?\""],a:0,
+w:"\"Just to make sure I understand, you're asking about..., right?\" adalah pola yang alami dan sopan. \"You ask what?\" dan pilihan terakhir tidak gramatikal. \"Your question is not clear.\" terdengar menyalahkan pewawancara."},
+{q:"Lengkapi kalimat: \"Could you give me an ___ of what you mean?\"",
+o:["example","examples","exemple","a example"],a:0,
+w:"Setelah \"an\" dibutuhkan kata benda tunggal yang diawali bunyi vokal: \"an example\". \"examples\" jamak sehingga tidak cocok dengan \"an\". \"exemple\" adalah ejaan Prancis. \"a example\" salah karena example diawali bunyi vokal."},
+{q:"Di tengah jawaban, kalimatmu berantakan. Cara terbaik memperbaikinya adalah...",
+o:["Berhenti bicara","\"Sorry, let me rephrase that.\"","\"My English is bad, sorry, sorry.\"","Melanjutkan walaupun tidak masuk akal"],a:1,
+w:"\"Sorry, let me rephrase that.\" singkat, profesional, dan memberi kesempatan mengulang dengan lebih jelas. Penutur asli juga sering memakainya. Meminta maaf berulang soal bahasa Inggris membuatmu terlihat kurang percaya diri."}
+]
+},
+{
+id: "e2", days: 5, title: "Tell me about yourself",
+goals: [
+"Menyusun jawaban 60 sampai 90 detik dengan pola present, past, future",
+"Memakai present perfect untuk pengalaman yang masih berlangsung",
+"Menutup jawaban dengan alasan tertarik pada posisi itu"
+],
+material: `
+<h3>Pola present, past, future</h3>
+<ol>
+<li><b>Present</b>: posisimu sekarang dan fokus pekerjaanmu.</li>
+<li><b>Past</b>: pengalaman sebelumnya yang relevan, satu pencapaian.</li>
+<li><b>Future</b>: kenapa kamu tertarik dengan posisi ini.</li>
+</ol>
+<p>Durasi ideal 60 sampai 90 detik. Ini bukan cerita hidup: tidak perlu tempat lahir, keluarga, atau hobi kecuali relevan.</p>
+<h3>Contoh</h3>
+<blockquote>I'm a frontend developer, and I've been working in web development for [X] years. Right now I mainly build products with React and Next.js, and I focus on performance and reusable components. Before that, I worked as a full-stack developer with Laravel and Node.js, so I'm comfortable working with APIs and databases too. Recently, I improved the load time of our main product page by [X]%. I'm now looking for a role in an international team where I can grow and build products for a bigger audience, and that's why this position caught my attention.</blockquote>
+<h3>Grammar yang sering dipakai</h3>
+<ul>
+<li><b>Present perfect continuous</b> untuk hal yang dimulai di masa lalu dan masih berlangsung: "I <u>have been working</u> as a developer for four years."</li>
+<li><b>Past simple</b> untuk hal yang sudah selesai: "Before that, I <u>worked</u> as a full-stack developer."</li>
+<li>"I'm experienced <u>in</u> React" atau "I have experience <u>with</u> React". Bukan "I'm experience in".</li>
+</ul>
+<h3>Yang dihindari</h3>
+<ul>
+<li>Mengeluh tentang kantor atau gaji saat ini.</li>
+<li>Membacakan isi CV baris per baris.</li>
+<li>Bicara lebih dari 2 menit.</li>
+</ul>`,
+questions: [
+{q:"Urutan isi yang paling efektif untuk menjawab \"Tell me about yourself\" adalah...",
+o:["Tempat lahir, sekolah, keluarga, hobi","Present (posisi sekarang), past (pengalaman relevan), future (kenapa posisi ini)","Membacakan CV dari awal sampai akhir","Langsung menyebut gaji yang diinginkan"],a:1,
+w:"Pola present, past, future membuat jawaban singkat, relevan, dan berakhir di alasanmu melamar. Cerita hidup dan membacakan CV terlalu panjang dan tidak fokus. Gaji dibahas di tahap lain."},
+{q:"Pilih bentuk yang benar: \"I ___ as a frontend developer for four years.\" (kamu masih bekerja sebagai frontend developer)",
+o:["am working","have been working","worked","work"],a:1,
+w:"Untuk sesuatu yang dimulai di masa lalu dan masih berlangsung, dengan keterangan \"for four years\", dipakai present perfect continuous: \"have been working\". \"worked\" berarti sudah berhenti. \"am working\" dan \"work\" tidak dipakai bersama \"for four years\" untuk durasi."},
+{q:"Kalimat mana yang benar?",
+o:["\"I'm experience in React.\"","\"I'm experienced in React.\"","\"I have experienced in React.\"","\"I experience React.\""],a:1,
+w:"\"experienced\" adalah kata sifat: \"I'm experienced in React.\" Bentuk lain yang benar adalah \"I have experience with React.\" (experience sebagai kata benda). \"I'm experience\" mencampur keduanya dan salah."},
+{q:"Berapa durasi ideal untuk jawaban \"Tell me about yourself\"?",
+o:["10 detik","Sekitar 60 sampai 90 detik","5 menit","Selama mungkin agar terlihat berpengalaman"],a:1,
+w:"Satu sampai satu setengah menit cukup untuk memberi gambaran dan memancing pertanyaan lanjutan. Jawaban 10 detik terlalu tipis, dan jawaban 5 menit membuat pewawancara kehilangan fokus."},
+{q:"Kalimat penutup mana yang paling kuat?",
+o:["\"So, yeah. That's all.\"","\"I'm looking for a role in an international team where I can grow, and that's why this position caught my attention.\"","\"I want to leave my company because the salary is low.\"","\"Any job is fine for me.\""],a:1,
+w:"Penutup yang kuat menghubungkan dirimu dengan posisi yang dilamar. \"That's all\" terasa menggantung. Mengeluhkan gaji memberi kesan negatif, dan \"any job is fine\" menunjukkan kamu tidak tertarik secara khusus."},
+{q:"Pilih bentuk yang benar: \"Before that, I ___ as a full-stack developer with Laravel.\" (pekerjaan itu sudah selesai)",
+o:["have worked","worked","am working","have been working"],a:1,
+w:"Pekerjaan yang sudah selesai di masa lalu, dengan penanda \"before that\", memakai past simple: \"worked\". Present perfect dan present continuous menunjukkan hubungan dengan saat ini, yang tidak cocok di sini."}
+]
+},
+{
+id: "e3", days: 6, title: "Menceritakan project",
+goals: [
+"Memakai past simple, termasuk kata kerja tidak beraturan",
+"Membedakan kapan memakai \"I\" dan \"we\"",
+"Memakai kata penghubung dan angka untuk menunjukkan hasil"
+],
+material: `
+<h3>Past simple untuk project yang sudah selesai</h3>
+<div class="tbl"><table>
+<tr><th>Bentuk dasar</th><th>Past</th><th>Contoh</th></tr>
+<tr><td>build</td><td>built</td><td>I built a dashboard for the sales team.</td></tr>
+<tr><td>find</td><td>found</td><td>I found a memory leak in the chart component.</td></tr>
+<tr><td>lead</td><td>led</td><td>I led the migration to Next.js.</td></tr>
+<tr><td>write</td><td>wrote</td><td>I wrote unit tests for the checkout flow.</td></tr>
+<tr><td>choose</td><td>chose</td><td>We chose PostgreSQL because...</td></tr>
+<tr><td>improve</td><td>improved</td><td>I improved the load time by 40%.</td></tr>
+</table></div>
+<p>Hati-hati: "founded" berarti mendirikan (perusahaan). Bentuk lampau dari "find" adalah "found".</p>
+<h3>"I" atau "we"?</h3>
+<p>Pewawancara ingin tahu kontribusimu. Pakai "we" untuk konteks tim, lalu "I" untuk bagianmu: "We were migrating to Next.js. I was in charge of the product pages."</p>
+<h3>Kata penghubung</h3>
+<ul>
+<li>Urutan: <i>first, then, after that, finally</i></li>
+<li>Alasan: <i>because, since</i></li>
+<li>Akibat: <i>so, as a result</i></li>
+<li>Pertentangan: <i>however, but</i></li>
+</ul>
+<h3>Pakai angka</h3>
+<p>"It was faster" lemah. "The page load time dropped from 6 seconds to 2 seconds" kuat. Jika tidak punya angka pasti, pakai perkiraan yang jujur: "roughly", "about".</p>
+<h3>Frasa berguna</h3>
+<ul>
+<li>"I was in charge of..." (bertanggung jawab atas)</li>
+<li>"I worked closely with the designer to..."</li>
+<li>"The main challenge was..."</li>
+</ul>`,
+questions: [
+{q:"Pilih bentuk yang benar: \"Last year, I ___ a dashboard for our sales team.\"",
+o:["build","builded","built","have built"],a:2,
+w:"\"Last year\" menunjukkan waktu lampau yang sudah selesai, jadi dipakai past simple. Bentuk lampau dari \"build\" tidak beraturan: \"built\". \"builded\" tidak ada, dan present perfect tidak dipakai dengan keterangan waktu lampau yang spesifik."},
+{q:"Pilih bentuk yang benar: \"I ___ a bug in the checkout flow that caused double payments.\"",
+o:["finded","found","founded","find"],a:1,
+w:"Bentuk lampau dari \"find\" adalah \"found\". \"founded\" adalah bentuk lampau dari \"found\" yang berarti mendirikan, misalnya \"She founded a startup.\" \"finded\" tidak ada."},
+{q:"Pewawancara bertanya tentang project tim. Cara bercerita mana yang paling baik?",
+o:["Selalu memakai \"we\" supaya terlihat rendah hati","Memakai \"we\" untuk konteks tim dan \"I\" untuk kontribusi pribadimu","Selalu memakai \"I\" walaupun bukan kamu yang mengerjakan","Tidak menyebut tim sama sekali"],a:1,
+w:"Pewawancara menilai dirimu, jadi kontribusimu harus jelas dengan \"I\". Konteks tim tetap disebut dengan \"we\" agar jujur dan menunjukkan kemampuan bekerja sama. Mengklaim pekerjaan orang lain bisa terbongkar di pertanyaan lanjutan."},
+{q:"Lengkapi: \"I compressed the images and added lazy loading. ___, the page load time dropped from 6 to 2 seconds.\"",
+o:["However","As a result","Because","Although"],a:1,
+w:"Kalimat kedua adalah akibat dari tindakan di kalimat pertama, jadi dipakai \"As a result\". \"However\" untuk pertentangan, \"Because\" untuk alasan, dan \"Although\" untuk pengakuan yang bertentangan."},
+{q:"Deskripsi mana yang paling kuat untuk wawancara?",
+o:["\"I made the website better.\"","\"I worked on performance.\"","\"I reduced the product page load time from 6 seconds to 2 seconds by optimizing images and splitting the JavaScript bundle.\"","\"The website was slow but now it's okay.\""],a:2,
+w:"Jawaban ketiga menyebut tindakan spesifik dan hasil yang terukur. Pewawancara bisa membayangkan apa yang kamu lakukan dan dampaknya. Tiga pilihan lain terlalu umum untuk menunjukkan kemampuan."},
+{q:"Apa arti \"I was in charge of the frontend\"?",
+o:["Aku mengisi daya perangkat frontend","Aku bertanggung jawab atas bagian frontend","Aku dibayar untuk frontend","Aku menyerahkan frontend ke orang lain"],a:1,
+w:"\"in charge of\" berarti bertanggung jawab atau memimpin sesuatu. Frasa ini sangat berguna untuk menjelaskan peranmu dalam project tim."}
+]
+},
+{
+id: "e4", days: 7, title: "Metode STAR",
+goals: [
+"Menyebut dan mengenali empat bagian STAR",
+"Membuat bagian Action menjadi yang paling detail",
+"Menutup dengan Result yang terukur, termasuk untuk pertanyaan tentang kesalahan"
+],
+material: `
+<h3>Empat bagian STAR</h3>
+<div class="tbl"><table>
+<tr><th>Bagian</th><th>Isi</th><th>Porsi</th></tr>
+<tr><td><b>S</b>ituation</td><td>Konteks singkat: kapan, di mana, masalahnya apa</td><td>±15%</td></tr>
+<tr><td><b>T</b>ask</td><td>Tanggung jawabmu atau target yang harus dicapai</td><td>±10%</td></tr>
+<tr><td><b>A</b>ction</td><td>Langkah yang <u>kamu</u> ambil, dan kenapa</td><td>±50%</td></tr>
+<tr><td><b>R</b>esult</td><td>Hasil terukur dan apa yang dipelajari</td><td>±25%</td></tr>
+</table></div>
+<h3>Contoh</h3>
+<blockquote><b>S:</b> Two weeks before a big sale, our checkout page kept crashing on older Android phones.<br>
+<b>T:</b> I was responsible for finding the cause and fixing it before launch.<br>
+<b>A:</b> First, I reproduced the issue on a test device. Then I used the Performance panel and found that a large third-party script blocked the main thread. I moved it so it loaded only after user interaction, and I split our own bundle.<br>
+<b>R:</b> The crashes stopped, and the checkout page became interactive about two seconds faster. We launched on time.</blockquote>
+<h3>Pertanyaan perilaku yang sering muncul</h3>
+<ul>
+<li>"Tell me about a time you disagreed with a teammate."</li>
+<li>"Tell me about a mistake you made."</li>
+<li>"Tell me about a time you had a tight deadline."</li>
+<li>"Tell me about a time you learned something quickly."</li>
+</ul>
+<h3>Pertanyaan tentang kesalahan</h3>
+<p>Pewawancara mencari tiga hal: kamu mengakui kesalahannya, kamu memperbaikinya, dan kamu mengubah sesuatu supaya tidak terulang. Jangan memilih "kesalahan" palsu seperti "I work too hard."</p>
+<h3>Pertanyaan tentang perbedaan pendapat</h3>
+<p>Tunjukkan bahwa kamu mendengarkan, memakai data atau eksperimen kecil, dan tetap menghormati keputusan akhir. Jangan menjawab "I never disagree with anyone."</p>`,
+questions: [
+{q:"Dalam STAR, huruf R berarti...",
+o:["Reason","Result","Review","Responsibility"],a:1,
+w:"STAR adalah Situation, Task, Action, Result. Result adalah hasil dari tindakanmu, sebaiknya terukur. Tanggung jawabmu dijelaskan di bagian Task."},
+{q:"Bagian mana yang seharusnya paling panjang dan detail?",
+o:["Situation","Task","Action","Result"],a:2,
+w:"Action menunjukkan apa yang benar-benar kamu lakukan dan cara berpikirmu, dan itulah yang dinilai pewawancara. Situation dan Task cukup singkat sebagai konteks. Result penting, tapi biasanya cukup satu sampai dua kalimat."},
+{q:"Kalimat \"Two weeks before launch, our checkout page kept crashing on older Android phones.\" termasuk bagian...",
+o:["Situation","Task","Action","Result"],a:0,
+w:"Kalimat ini menjelaskan konteks dan masalah: kapan dan apa yang terjadi. Itu adalah Situation. Belum ada tanggung jawabmu (Task), langkah yang diambil (Action), atau hasil (Result)."},
+{q:"Pertanyaan: \"Tell me about a time you disagreed with a teammate.\" Pendekatan jawaban mana yang terbaik?",
+o:["\"I never disagree with anyone.\"","Menceritakan bagaimana kamu menang dan rekanmu salah","Menceritakan situasi nyata: kamu mendengarkan alasannya, mengusulkan uji coba kecil dengan data, lalu tim memilih berdasarkan hasilnya","Menolak menjawab karena terlalu pribadi"],a:2,
+w:"Pewawancara menilai cara kamu berkolaborasi saat ada konflik. Jawaban ketiga menunjukkan sikap menghormati, berbasis data, dan berorientasi pada hasil tim. Mengaku tidak pernah berbeda pendapat terdengar tidak jujur, dan fokus pada \"menang\" menunjukkan sulit bekerja sama."},
+{q:"Result mana yang paling kuat?",
+o:["\"It went well.\"","\"Everyone was happy.\"","\"The crashes stopped, the page became interactive about two seconds faster, and we launched on time.\"","\"I did my best.\""],a:2,
+w:"Result yang kuat menyebut dampak yang bisa diukur atau diamati. Tiga pilihan lain terlalu umum dan tidak membuktikan apa pun tentang kualitas pekerjaanmu."},
+{q:"Pertanyaan: \"Tell me about a mistake you made.\" Apa yang paling ingin dilihat pewawancara?",
+o:["Bahwa kamu tidak pernah membuat kesalahan","Kesalahan nyata, bagaimana kamu memperbaikinya, dan apa yang kamu ubah supaya tidak terulang","Siapa yang sebenarnya bersalah","Kesalahan yang sebenarnya pujian, seperti \"I work too hard\""],a:1,
+w:"Pertanyaan ini menguji kejujuran dan kemampuan belajar. Kesalahan nyata yang diikuti perbaikan dan perubahan proses menunjukkan kedewasaan. Menyalahkan orang lain atau memberi kesalahan palsu adalah tanda bahaya bagi pewawancara."}
+]
+},
+{
+id: "e5", days: 5, title: "Kosakata kerja tim tech",
+goals: [
+"Memahami istilah yang sering muncul di rapat dan wawancara",
+"Memakai istilah itu dalam kalimat sendiri"
+],
+material: `
+<div class="tbl"><table>
+<tr><th>Istilah</th><th>Arti</th><th>Contoh kalimat</th></tr>
+<tr><td>trade-off</td><td>Kompromi: mendapat sesuatu dengan mengorbankan hal lain</td><td>The trade-off is a bigger bundle for faster development.</td></tr>
+<tr><td>to refactor</td><td>Merapikan struktur kode tanpa mengubah perilakunya</td><td>I refactored the form into smaller components.</td></tr>
+<tr><td>edge case</td><td>Kasus tidak biasa di batas kondisi</td><td>What about the edge case where the list is empty?</td></tr>
+<tr><td>bottleneck</td><td>Bagian yang memperlambat seluruh sistem</td><td>The database query was the bottleneck.</td></tr>
+<tr><td>scalable</td><td>Tetap bekerja baik saat beban atau ukuran bertambah</td><td>We needed a scalable way to handle images.</td></tr>
+<tr><td>deprecated</td><td>Masih bisa dipakai tapi tidak disarankan dan akan dihapus</td><td>This API is deprecated, so we migrated.</td></tr>
+<tr><td>to ship</td><td>Merilis ke pengguna</td><td>We shipped the feature last sprint.</td></tr>
+<tr><td>to roll back</td><td>Kembali ke versi sebelumnya</td><td>We rolled back the release after the error.</td></tr>
+<tr><td>blocker</td><td>Hal yang menghentikan pekerjaan</td><td>My blocker is the missing API endpoint.</td></tr>
+<tr><td>to estimate</td><td>Memperkirakan waktu atau usaha</td><td>I estimated three days for this ticket.</td></tr>
+</table></div>
+<p class="tip">Latihan: setiap hari buat dua kalimat tentang pekerjaanmu sendiri memakai dua istilah dari tabel, lalu ucapkan dengan suara keras.</p>`,
+questions: [
+{q:"Apa arti \"to refactor\" code?",
+o:["Menambah fitur baru","Merapikan struktur kode tanpa mengubah perilakunya","Menghapus seluruh kode","Memperbaiki desain tampilan"],a:1,
+w:"Refactoring mengubah struktur internal kode supaya lebih mudah dibaca dan dirawat, sementara hasil yang dilihat pengguna tetap sama. Menambah fitur atau mengubah tampilan bukan refactoring."},
+{q:"Rekan kerja bertanya: \"What about the edge case where the user has no orders?\" Maksudnya...",
+o:["Kasus paling umum","Kasus tidak biasa di batas kondisi yang mungkin terlewat","Fitur di tepi layar","Bug yang sudah diperbaiki"],a:1,
+w:"Edge case adalah situasi tidak biasa atau ekstrem, seperti daftar kosong, input sangat panjang, atau nilai nol. Kasus seperti ini sering menyebabkan bug karena terlupakan saat menulis kode."},
+{q:"\"This API is deprecated.\" Artinya...",
+o:["API itu sudah dihapus dan tidak bisa dipakai","API itu masih bisa dipakai, tapi tidak disarankan dan kemungkinan akan dihapus","API itu baru dirilis","API itu gratis"],a:1,
+w:"Deprecated berarti fitur masih berfungsi, tapi sudah dinyatakan usang dan akan dihapus di versi mendatang. Itu tanda untuk mulai pindah ke alternatifnya."},
+{q:"\"The database query was the bottleneck.\" Artinya...",
+o:["Query itu bagian tercepat","Query itu bagian yang memperlambat seluruh proses","Query itu tidak dipakai","Query itu mengandung bug keamanan"],a:1,
+w:"Bottleneck (leher botol) adalah titik yang membatasi kecepatan seluruh sistem, seperti leher botol yang membatasi aliran air. Memperbaiki bottleneck biasanya memberi peningkatan terbesar."},
+{q:"Di daily standup, kamu tidak bisa melanjutkan pekerjaan karena endpoint API belum siap. Kalimat yang paling tepat adalah...",
+o:["\"My blocker is the missing API endpoint.\"","\"My bottleneck is lunch.\"","\"I deprecated the endpoint.\"","\"I rolled back my work.\""],a:0,
+w:"Blocker adalah hal yang menghentikan pekerjaanmu, dan kata ini sangat umum di standup. Tiga pilihan lain memakai istilah yang artinya tidak sesuai dengan situasi."},
+{q:"\"We had to roll back the release.\" Artinya...",
+o:["Merilis versi baru lebih cepat","Mengembalikan aplikasi ke versi sebelumnya","Menunda rilis tanpa batas","Mempromosikan rilis"],a:1,
+w:"Roll back berarti kembali ke versi sebelumnya, biasanya karena rilis baru menimbulkan masalah. Lawannya adalah roll out, yaitu merilis bertahap."}
+]
+},
+{
+id: "e6", days: 6, title: "Berpikir keras saat live coding",
+goals: [
+"Mengklarifikasi soal sebelum mulai menulis kode",
+"Menjelaskan pendekatan dan kompleksitas dengan kalimat sederhana",
+"Menguji solusi sendiri dan menerima petunjuk dengan baik"
+],
+material: `
+<p>Saat live coding, pewawancara menilai cara berpikirmu, bukan hanya hasil akhir. Diam selama 10 menit lalu menunjukkan jawaban benar sering dinilai lebih rendah daripada berpikir keras dengan beberapa kesalahan kecil.</p>
+<h3>1. Klarifikasi dulu</h3>
+<ul>
+<li>"Let me make sure I understand the problem. We need to..."</li>
+<li>"Can the input be empty?" / "Can there be duplicates?"</li>
+<li>"Should I optimize for readability or performance here?"</li>
+</ul>
+<h3>2. Jelaskan rencana sebelum menulis</h3>
+<ul>
+<li>"My first idea is a simple loop. It's O(n²), but let's start there and improve it."</li>
+<li>"I'm considering two approaches: ... or ..."</li>
+</ul>
+<h3>3. Bicara sambil menulis</h3>
+<ul>
+<li>"Here I'm creating a map so I can look up values quickly."</li>
+<li>"I'm not sure about this part yet. Let me come back to it."</li>
+</ul>
+<h3>4. Kompleksitas dengan kalimat sederhana</h3>
+<ul>
+<li>"This is O(n) because we go through the array once."</li>
+<li>"It uses extra memory for the map, so the space complexity is also O(n)."</li>
+</ul>
+<h3>5. Uji sendiri</h3>
+<ul>
+<li>"Let me test it with a few cases, including an empty array."</li>
+</ul>
+<h3>6. Menerima petunjuk</h3>
+<ul>
+<li>"That's a good point, thanks. So if I use a set here, I can..."</li>
+</ul>`,
+questions: [
+{q:"Kamu baru menerima soal live coding. Apa yang sebaiknya kamu lakukan pertama kali?",
+o:["Langsung menulis kode secepat mungkin","Mengklarifikasi soal: \"Let me make sure I understand. Can the input be empty?\"","Diam dan berpikir 10 menit","Meminta soal yang lebih mudah"],a:1,
+w:"Klarifikasi mencegah kamu menyelesaikan soal yang salah dan menunjukkan kebiasaan kerja yang baik. Di pekerjaan nyata, memahami kebutuhan sebelum menulis kode adalah keterampilan yang sangat dihargai."},
+{q:"Kamu belum yakin solusi mana yang terbaik. Apa yang sebaiknya kamu katakan?",
+o:["Tidak mengatakan apa-apa sampai yakin","\"I'm considering two approaches. The first is simpler but slower. Let me start with it and then improve.\"","\"I don't know.\"","\"This question is too hard.\""],a:1,
+w:"Berpikir keras membuat pewawancara melihat cara kamu menimbang pilihan, dan mereka bisa memberi petunjuk jika diperlukan. Memulai dari solusi sederhana lalu memperbaikinya adalah strategi yang diterima luas."},
+{q:"Apa maksud kalimat \"This solution is O(n) because we go through the array once\"?",
+o:["Waktu proses tetap sama berapa pun ukuran data","Waktu proses bertambah sebanding dengan jumlah elemen","Waktu proses bertambah kuadrat","Solusinya memakai n variabel"],a:1,
+w:"O(n) berarti waktu tumbuh linear terhadap ukuran input: dua kali lebih banyak elemen, kira-kira dua kali lebih lama. Waktu konstan adalah O(1), dan kuadrat adalah O(n²), misalnya loop di dalam loop."},
+{q:"Kamu sudah selesai menulis fungsi. Langkah terbaik berikutnya adalah...",
+o:["Langsung bilang \"Done.\"","\"Let me test it with a few cases, including an empty array and duplicates.\"","Menunggu pewawancara menemukan bug","Menghapus dan menulis ulang dari awal"],a:1,
+w:"Menguji sendiri dengan kasus normal dan edge case menunjukkan ketelitian. Pewawancara ingin melihat kamu menemukan bug sendiri, sama seperti yang diharapkan di pekerjaan nyata."},
+{q:"Pewawancara memberi petunjuk: \"What if you used a Set?\" Respons mana yang terbaik?",
+o:["\"No, my way is better.\"","\"That's a good point, thanks. With a Set, I can check duplicates in constant time, so the solution becomes O(n).\"","\"Okay.\" lalu diam","\"I already knew that.\""],a:1,
+w:"Respons terbaik menerima petunjuk dengan baik lalu langsung menunjukkan bahwa kamu memahami dampaknya. Ini memperlihatkan bahwa kamu mudah diajak bekerja sama dan cepat belajar."},
+{q:"Bagaimana menanyakan prioritas solusi dengan sopan?",
+o:["\"What do you want?\"","\"Should I optimize for readability or performance here?\"","\"Tell me the answer.\"","\"Is performance important or not, yes?\""],a:1,
+w:"\"Should I optimize for readability or performance here?\" sopan, jelas, dan menunjukkan kamu sadar ada trade-off. \"What do you want?\" terdengar ketus, dan pilihan terakhir tidak gramatikal."}
+]
+},
+{
+id: "e7", days: 4, title: "Bertanya balik dan menutup wawancara",
+goals: [
+"Menyiapkan pertanyaan cerdas untuk pewawancara",
+"Menanyakan visa, relokasi, dan gaji dengan sopan",
+"Menutup wawancara dan menulis email terima kasih"
+],
+material: `
+<h3>Pertanyaan untuk pewawancara</h3>
+<p>Siapkan 2 sampai 3 pertanyaan. Tidak bertanya sama sekali bisa terkesan tidak tertarik.</p>
+<ul>
+<li>"What does a typical week look like for someone in this role?"</li>
+<li>"What are the biggest challenges the team is facing right now?"</li>
+<li>"How does the team do code reviews?"</li>
+<li>"What would success look like in the first three months?"</li>
+</ul>
+<h3>Visa dan relokasi</h3>
+<ul>
+<li>"Could you tell me more about the visa sponsorship and relocation support for this role?"</li>
+<li>"Is the company able to support my family's visas as well?"</li>
+</ul>
+<h3>Ekspektasi gaji</h3>
+<p>Riset dulu kisaran gaji untuk posisi dan kota itu. Lalu:</p>
+<blockquote>Based on my research for this role in [city], I'm looking for around [amount] per year, but I'm open to discussing the full package.</blockquote>
+<h3>Menutup wawancara</h3>
+<ul>
+<li>"Thank you for your time. I really enjoyed learning about the team."</li>
+<li>"I look forward to hearing from you."</li>
+</ul>
+<h3>Email terima kasih (dalam 24 jam)</h3>
+<blockquote>Subject: Thank you – Frontend Developer interview<br><br>
+Hi [Name],<br>
+Thank you for taking the time to speak with me today. I enjoyed learning about [topik spesifik dari wawancara], and I'm excited about the opportunity to contribute to the team.<br><br>
+Best regards,<br>[Your name]</blockquote>`,
+questions: [
+{q:"Di akhir wawancara pertama, pertanyaan mana yang paling baik diajukan?",
+o:["\"How many days off do I get?\"","\"What does a typical week look like for someone in this role?\"","\"Did I get the job?\"","Tidak bertanya apa-apa"],a:1,
+w:"Pertanyaan tentang pekerjaan sehari-hari menunjukkan minat pada peran itu. Cuti dan benefit wajar ditanyakan, tapi lebih tepat di tahap akhir. Menanyakan hasil langsung menempatkan pewawancara di posisi sulit, dan tidak bertanya terkesan tidak tertarik."},
+{q:"Cara paling sopan menanyakan dukungan visa adalah...",
+o:["\"You must give me a visa.\"","\"Could you tell me more about the visa sponsorship and relocation support for this role?\"","\"Visa?\"","\"I will only come if you pay everything.\""],a:1,
+w:"\"Could you tell me more about...\" adalah pola bertanya yang sopan dan netral. Pilihan lain terdengar menuntut atau terlalu singkat untuk konteks profesional."},
+{q:"Kamu ditanya: \"What are your salary expectations?\" Jawaban mana yang paling baik?",
+o:["\"Whatever you give me is fine.\"","\"Based on my research for this role in Berlin, I'm looking for around 60,000 euros per year, but I'm open to discussing the full package.\"","\"As much as possible.\"","\"I don't want to talk about money.\""],a:1,
+w:"Jawaban yang baik berdasar riset, menyebut angka atau kisaran yang jelas, dan tetap terbuka untuk negosiasi. \"Whatever you give me\" bisa membuatmu dibayar jauh di bawah pasar. Dua pilihan lain tidak menjawab pertanyaan."},
+{q:"Kalimat penutup wawancara yang paling tepat adalah...",
+o:["\"Bye.\"","\"Thank you for your time. I look forward to hearing from you.\"","\"Please hire me.\"","\"Call me tomorrow.\""],a:1,
+w:"Kalimat ini sopan, profesional, dan umum dipakai. \"Bye.\" terlalu santai, \"Please hire me.\" terkesan memohon, dan \"Call me tomorrow.\" terdengar seperti memerintah."},
+{q:"Kapan sebaiknya mengirim email terima kasih setelah wawancara?",
+o:["Dalam 24 jam","Setelah satu bulan","Hanya jika diterima","Tidak perlu sama sekali"],a:0,
+w:"Email dalam 24 jam masih segar di ingatan pewawancara dan menunjukkan sikap profesional. Menyebut satu topik spesifik dari wawancara membuat email terasa tulus, bukan template."}
+]
+}
+]
+}
+];
+
+</script>
+<script>
+(function(){
+"use strict";
+const DAY = 864e5;
+const KEY = "jalur-naik-level-v1";
+const app = document.getElementById("app");
+const trackColor = { tek:["var(--tek)","var(--tek-soft)"], eng:["var(--eng)","var(--eng-soft)"] };
+
+/* ---------- state ---------- */
+let S = { v:1, t:{} };
+let saveMode = "memory";   // memory | local | db
+let dbRef = null;
+let saving = Promise.resolve();
+let dirty = false;
+
+function tState(id){ return S.t[id] || (S.t[id] = { startedAt:null, readAt:null, needReview:false, passedAt:null, attempts:[] }); }
+function loadLocal(){ try{ const raw = localStorage.getItem(KEY); if(raw){ const d = JSON.parse(raw); if(d && d.t) return d; } }catch(e){} return null; }
+function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); if(saveMode==="memory") saveMode="local"; }catch(e){} }
+function persist(){
+  saveLocal();
+  if(!dbRef) return;
+  dirty = true;
+  saving = saving.then(async () => {
+    if(!dirty) return;
+    dirty = false;
+    try{ await dbRef.set(JSON.parse(JSON.stringify(S))); }
+    catch(e){ /* tetap tersimpan di browser */ }
+  });
+}
+function newer(a,b){
+  const score = s => Object.values((s&&s.t)||{}).reduce((n,x)=> n + (x.attempts||[]).length + (x.passedAt?10:0) + (x.readAt?1:0), 0);
+  return score(a) >= score(b) ? a : b;
+}
+async function initDb(){
+  const c = window.claude;
+  if(!c || typeof c.use !== "function") return;
+  try{
+    const [db, user] = await Promise.all([c.use("db"), c.use("user")]);
+    if(!db || !user) return;
+    const id = await user.id();
+    if(!id) return;
+    const ref = db.doc("data/users/" + id + "/progress");
+    const snap = await ref.get();
+    if(snap.exists){
+      const remote = snap.data();
+      if(remote && remote.t){ S = JSON.parse(JSON.stringify(newer(remote, S))); }
+    }
+    dbRef = ref; saveMode = "db";
+    saveLocal();
+    if(!snap.exists && Object.keys(S.t).length){ persist(); }
+    render();
+  }catch(e){ /* tetap memakai penyimpanan browser */ }
+}
+
+/* ---------- helpers ---------- */
+const esc = s => String(s).replace(/[&<>"']/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+function today0(){ const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); }
+function dayIndex(startedAt){ if(!startedAt) return 0; const s = new Date(startedAt); s.setHours(0,0,0,0); return Math.floor((today0() - s.getTime())/DAY) + 1; }
+function fmtDate(ts){ return new Date(ts).toLocaleDateString("id-ID",{day:"numeric",month:"short",year:"numeric"}); }
+function shuffle(a){ const b = a.slice(); for(let i=b.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; }
+function findTarget(id){ for(const tr of TRACKS){ const i = tr.targets.findIndex(t=>t.id===id); if(i>=0) return { track:tr, target:tr.targets[i], index:i }; } return null; }
+function unlocked(track, i){ return i===0 || !!tState(track.targets[i-1].id).passedAt; }
+function status(track, i){
+  const t = track.targets[i], st = S.t[t.id];
+  if(st && st.passedAt) return "done";
+  if(!unlocked(track,i)) return "lock";
+  if(st && st.needReview) return "redo";
+  if(st && st.startedAt && dayIndex(st.startedAt) > t.days) return "late";
+  if(st && st.startedAt) return "run";
+  return "open";
+}
+
+/* ---------- view state ---------- */
+let view = { name:"home" };
+let exam = null; // { targetId, order:[{qi, opts:[origIdx...]}], answers:{}, submitted:false, result }
+
+function go(v){ view = v; render(); window.scrollTo({top:0}); }
+
+/* ---------- render ---------- */
+function render(){
+  if(view.name === "home") renderHome();
+  else renderTarget();
+}
+
+function saveBadge(){
+  const txt = saveMode==="db" ? "Progres tersimpan di akunmu" : saveMode==="local" ? "Progres tersimpan di browser ini" : "Progres hanya tersimpan selama halaman terbuka";
+  return '<span class="save '+(saveMode==="db"?"db":"")+'"><i></i>'+txt+'</span>';
+}
+
+function renderHome(){
+  let h = '<header class="top"><div><div class="eyebrow">Persiapan kerja di luar negeri</div><h1>Jalur Naik Level</h1>'
+    + '<p class="lead">Dua jalur yang berjalan bersamaan: fondasi teknis web developer dan bahasa Inggris untuk wawancara. Setiap target punya materi, batas hari, dan ujian.</p></div>'
+    + saveBadge() + '</header>';
+  h += '<div class="rule"><span><b>Lulus = 100% benar.</b> Satu jawaban salah berarti mengulang materi dulu.</span><span><b>Target berikutnya terbuka</b> setelah target sebelumnya lulus.</span><span><b>Hitungan hari</b> dimulai saat target pertama kali dibuka.</span></div>';
+  h += '<div class="tracks">';
+  for(const tr of TRACKS){
+    const [c, cs] = trackColor[tr.id];
+    const done = tr.targets.filter(t => S.t[t.id] && S.t[t.id].passedAt).length;
+    const totalDays = tr.targets.reduce((n,t)=>n+t.days,0);
+    h += '<section class="track" style="--c:'+c+';--cs:'+cs+'">';
+    h += '<div class="track-head"><h2>'+esc(tr.name)+'</h2><span class="muted num">'+done+' / '+tr.targets.length+' lulus · rencana '+totalDays+' hari</span></div>';
+    h += '<div class="bar"><span style="width:'+(done/tr.targets.length*100)+'%"></span></div>';
+    h += '<div class="list">';
+    tr.targets.forEach((t,i) => {
+      const s = status(tr,i), st = S.t[t.id];
+      let pill = "", sub = t.days+" hari · "+t.questions.length+" soal";
+      if(s==="done"){ pill='<span class="pill p-done">Lulus</span>'; sub = "Lulus "+fmtDate(st.passedAt)+" · "+st.attempts.length+"× ujian"; }
+      else if(s==="lock"){ pill='<span class="pill p-lock">Terkunci</span>'; }
+      else if(s==="redo"){ pill='<span class="pill p-redo">Ulangi materi</span>'; }
+      else if(s==="late"){ pill='<span class="pill p-late">Lewat '+(dayIndex(st.startedAt)-t.days)+' hari</span>'; sub = "Hari "+dayIndex(st.startedAt)+" dari "+t.days; }
+      else if(s==="run"){ pill='<span class="pill p-run num">Hari '+dayIndex(st.startedAt)+'/'+t.days+'</span>'; }
+      else { pill='<span class="pill p-run">Siap dimulai</span>'; }
+      const cls = "item " + (s==="done"?"done":(s!=="lock"?"on":""));
+      h += '<button class="'+cls+'" data-open="'+t.id+'" '+(s==="lock"?'disabled':'')+'><span class="idx num">'+(i+1)+'</span><span><span class="t">'+esc(t.title)+'</span><br><span class="s">'+esc(sub)+'</span></span>'+pill+'</button>';
+    });
+    h += '</div></section>';
+  }
+  h += '</div>';
+  h += renderBackup();
+  h += '<footer class="foot"><span>Materi disusun berdasarkan rencana belajar di dokumenmu. Kerjakan satu target di setiap jalur secara bersamaan.</span>'
+    + '<span class="row"><button class="linkbtn" data-act="bk-export">Simpan cadangan</button><button class="linkbtn" data-act="bk-import">Pulihkan cadangan</button></span>'
+    + (view.confirmReset
+      ? '<span class="row"><span>Hapus semua progres?</span><button class="linkbtn danger" data-act="reset-yes">Ya, hapus</button><button class="linkbtn" data-act="reset-no">Batal</button></span>'
+      : '<button class="linkbtn" data-act="reset">Mulai ulang dari awal</button>')
+    + '</footer>';
+  app.innerHTML = h;
+}
+
+function encodeBackup(){ return "JNL1:" + btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+function decodeBackup(txt){
+  const s = String(txt).trim().replace(/^JNL1:/, "");
+  const d = JSON.parse(decodeURIComponent(escape(atob(s))));
+  if(!d || typeof d.t !== "object") throw new Error("format");
+  return d;
+}
+function renderBackup(){
+  if(!view.backup) return "";
+  let h = '<section class="goals" id="backup">';
+  if(view.backup === "export"){
+    h += '<span class="eyebrow">Kode cadangan progres</span><p>Salin kode ini dan simpan di tempat aman, misalnya catatan di HP atau pesan WhatsApp ke dirimu sendiri. Tempelkan lagi lewat "Pulihkan cadangan" di perangkat atau browser mana pun.</p>'
+      + '<textarea id="bk-out" readonly rows="4" style="width:100%;font-family:var(--f-mono);font-size:12px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--sunk);color:var(--ink)">'+esc(encodeBackup())+'</textarea>'
+      + '<div class="row"><button class="btn" style="--c:var(--tek)" data-act="bk-copy">Salin kode</button><button class="btn ghost" data-act="bk-close">Tutup</button><span class="muted" id="bk-msg" style="font-size:14px"></span></div>';
+  }else{
+    h += '<span class="eyebrow">Pulihkan dari kode cadangan</span><p>Tempel kode cadangan di bawah. Progres di halaman ini akan diganti dengan isi cadangan.</p>'
+      + '<textarea id="bk-in" rows="4" placeholder="JNL1:..." style="width:100%;font-family:var(--f-mono);font-size:12px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)"></textarea>'
+      + '<div class="row"><button class="btn" style="--c:var(--tek)" data-act="bk-apply">Pulihkan</button><button class="btn ghost" data-act="bk-close">Tutup</button><span id="bk-msg" style="font-size:14px"></span></div>';
+  }
+  return h + '</section>';
+}
+
+function renderTarget(){
+  const f = findTarget(view.id); if(!f){ go({name:"home"}); return; }
+  const { track, target, index } = f;
+  const [c, cs] = trackColor[track.id];
+  const st = tState(target.id);
+  const tab = view.tab || "materi";
+  const di = dayIndex(st.startedAt);
+  const examReady = !!st.readAt && !st.needReview;
+
+  let h = '<div style="--c:'+c+';--cs:'+cs+';display:flex;flex-direction:column;gap:22px">';
+  h += '<button class="back" data-act="home">← Semua target</button>';
+  h += '<div class="dhead"><div class="dmeta"><span class="chip">'+esc(track.short)+' · Target '+(index+1)+'</span>'
+     + (st.passedAt ? '<span class="pill p-done">Lulus '+fmtDate(st.passedAt)+'</span>' : '<span class="muted num">Hari '+Math.max(di,1)+' dari '+target.days+'</span>')
+     + '</div><h2 style="font-size:clamp(24px,4vw,32px)">'+esc(target.title)+'</h2>';
+  if(!st.passedAt){
+    h += '<div class="days" aria-hidden="true">';
+    const n = Math.max(target.days, di);
+    for(let d=1; d<=n; d++){ h += '<span class="'+(d<=di ? (d>target.days?"over":"past") : "")+'"></span>'; }
+    h += '</div>';
+    if(di > target.days) h += '<p class="muted" style="font-size:14px">Sudah lewat '+(di-target.days)+' hari dari target. Tidak apa-apa, lanjutkan sampai lulus.</p>';
+  }
+  h += '</div>';
+  h += '<div class="goals"><span class="eyebrow">Setelah '+target.days+' hari, kamu harus bisa</span><ul>'+target.goals.map(g=>'<li>'+esc(g)+'</li>').join("")+'</ul></div>';
+
+  h += '<div class="tabs" role="tablist">'
+     + '<button class="tab" role="tab" aria-selected="'+(tab==="materi")+'" data-tab="materi">Materi</button>'
+     + '<button class="tab" role="tab" aria-selected="'+(tab==="ujian")+'" data-tab="ujian">Ujian</button>'
+     + '<button class="tab" role="tab" aria-selected="'+(tab==="riwayat")+'" data-tab="riwayat">Riwayat ('+st.attempts.length+')</button>'
+     + '</div>';
+
+  if(tab === "materi"){
+    if(st.needReview){
+      const last = st.attempts[st.attempts.length-1];
+      h += '<div class="notice n-bad"><b>Nilai terakhir '+last.score+' dari '+last.total+'.</b><span>Pelajari ulang materi ini, terutama bagian yang berkaitan dengan soal yang salah. Setelah itu tekan tombol di bagian bawah untuk membuka ujian lagi.</span>'
+        + (last.wrong && last.wrong.length ? '<span>Soal yang salah: '+last.wrong.map(w=>'<i>'+esc(w)+'</i>').join("; ")+'</span>' : '') + '</div>';
+    }
+    h += '<article class="mat">'+target.material+'</article>';
+    if(st.passedAt){
+      h += '<div class="row"><button class="btn" data-tab="ujian">Ujian lagi untuk latihan</button></div>';
+    }else{
+      h += '<div class="notice n-info"><span>'+(st.needReview ? 'Sudah membaca ulang dan yakin bisa menjawab semua soal dengan benar?' : 'Sudah memahami semua poin di atas dan bisa menjelaskannya dengan kata-katamu sendiri?')+'</span>'
+        + '<div class="row"><button class="btn" data-act="read">'+(st.needReview ? 'Saya sudah mengulang materi' : 'Saya sudah mempelajari materi ini')+'</button></div></div>';
+    }
+  }
+
+  if(tab === "ujian"){
+    const showingResult = exam && exam.targetId === target.id && exam.submitted;
+    if(!examReady && !st.passedAt && !showingResult){
+      h += '<div class="notice n-info">'+(st.needReview
+        ? '<b>Ujian terkunci.</b><span>Ulangi materi dulu, lalu tekan "Saya sudah mengulang materi" di akhir halaman materi.</span>'
+        : '<b>Pelajari materinya dulu.</b><span>Tekan "Saya sudah mempelajari materi ini" di akhir halaman materi untuk membuka ujian.</span>')
+        + '<div class="row"><button class="btn" data-tab="materi">Buka materi</button></div></div>';
+    }else{
+      h += renderExam(track, target, st);
+    }
+  }
+
+  if(tab === "riwayat"){
+    if(!st.attempts.length){ h += '<p class="muted">Belum ada ujian untuk target ini.</p>'; }
+    else{
+      h += '<div class="hist">' + st.attempts.slice().reverse().map((a,k) =>
+        '<div><span>Ujian ke-'+(st.attempts.length-k)+' · '+fmtDate(a.at)+'</span><span class="num" style="font-weight:700;color:'+(a.score===a.total?'var(--good)':'var(--bad)')+'">'+a.score+' / '+a.total+'</span></div>').join("") + '</div>';
+      if(st.startedAt) h += '<p class="muted" style="font-size:14px">Mulai '+fmtDate(st.startedAt)+(st.passedAt ? ', lulus '+fmtDate(st.passedAt)+' (hari ke-'+(Math.floor((new Date(st.passedAt).setHours(0,0,0,0) - new Date(st.startedAt).setHours(0,0,0,0))/DAY)+1)+' dari '+target.days+').' : '.')+'</p>';
+    }
+  }
+  h += '</div>';
+  app.innerHTML = h;
+}
+
+function startExam(target){
+  exam = {
+    targetId: target.id,
+    order: shuffle(target.questions.map((_,i)=>i)).map(qi => ({ qi, opts: shuffle(target.questions[qi].o.map((_,k)=>k)) })),
+    answers: {}, submitted: false
+  };
+}
+
+function renderExam(track, target, st){
+  if(!exam || exam.targetId !== target.id) startExam(target);
+  const total = exam.order.length;
+  let h = '<div class="exam">';
+  if(exam.submitted){
+    const r = exam.result;
+    h += r.pass
+      ? '<div class="notice n-good"><span class="score num">'+r.score+' / '+total+'</span><b>Lulus. Semua jawaban benar.</b><span>'+(r.next ? 'Target berikutnya, "'+esc(r.next.title)+'", sudah terbuka.' : 'Kamu sudah menyelesaikan semua target di jalur ini.')+'</span></div>'
+      : '<div class="notice n-bad"><span class="score num">'+r.score+' / '+total+'</span><b>Belum lulus.</b><span>Batas lulus adalah '+total+' dari '+total+'. Baca penjelasan di setiap soal, lalu ulangi materinya sebelum mencoba lagi.</span></div>';
+  }else{
+    h += '<p class="muted">'+total+' soal. Urutan soal dan pilihan diacak setiap ujian. Setelah dikirim, setiap soal menampilkan alasan kenapa jawabannya benar.</p>';
+  }
+  exam.order.forEach((o, n) => {
+    const q = target.questions[o.qi];
+    const ans = exam.answers[n];
+    const qcls = exam.submitted ? (ans === q.a ? "ok" : "no") : "";
+    h += '<fieldset class="q '+qcls+'" style="margin:0"><legend class="qn">Soal '+(n+1)+' dari '+total+'</legend>';
+    h += '<p class="qt">'+esc(q.q)+'</p>';
+    if(q.code) h += '<pre><code>'+esc(q.code)+'</code></pre>';
+    h += '<div class="opts">';
+    o.opts.forEach(k => {
+      let cls = "opt", tag = "";
+      if(exam.submitted){
+        cls += " lockd";
+        if(k === q.a){ cls += " right"; tag = '<span class="tag" style="color:var(--good)">Jawaban benar</span>'; }
+        else if(k === ans){ cls += " wrong"; tag = '<span class="tag" style="color:var(--bad)">Jawabanmu</span>'; }
+      }else if(k === ans){ cls += " sel"; }
+      h += '<label class="'+cls+'"><input type="radio" id="q'+n+'o'+k+'" name="q'+n+'" value="'+k+'" '+(k===ans?'checked':'')+' '+(exam.submitted?'disabled':'')+' data-q="'+n+'"><span>'+esc(q.o[k])+'</span>'+tag+'</label>';
+    });
+    h += '</div>';
+    if(exam.submitted){
+      h += '<div class="why"><b>'+(ans===q.a ? 'Benar. Kenapa:' : 'Kenapa jawabannya "'+esc(q.o[q.a])+'":')+'</b>'+esc(q.w)+'</div>';
+    }
+    h += '</fieldset>';
+  });
+  const answered = Object.keys(exam.answers).length;
+  if(!exam.submitted){
+    h += '<div class="sticky"><span class="muted num">'+answered+' dari '+total+' dijawab</span><button class="btn" data-act="submit" '+(answered<total?'disabled':'')+'>Kirim jawaban</button></div>';
+  }else{
+    h += '<div class="row">' + (exam.result.pass
+      ? (exam.result.next ? '<button class="btn" data-open="'+exam.result.next.id+'">Lanjut ke target berikutnya</button>' : '') + '<button class="btn ghost" data-act="home">Kembali ke semua target</button>'
+      : '<button class="btn" data-tab="materi">Ulangi materi</button>') + '</div>';
+  }
+  h += '</div>';
+  return h;
+}
+
+function submitExam(){
+  const f = findTarget(exam.targetId); const { track, target, index } = f;
+  const st = tState(target.id);
+  let score = 0; const wrong = [];
+  exam.order.forEach((o,n) => { const q = target.questions[o.qi]; if(exam.answers[n] === q.a) score++; else wrong.push(q.q.length > 90 ? q.q.slice(0,88)+"…" : q.q); });
+  const total = exam.order.length, pass = score === total;
+  st.attempts.push({ at: Date.now(), score, total, wrong });
+  if(pass){ if(!st.passedAt) st.passedAt = Date.now(); st.needReview = false; }
+  else if(!st.passedAt){ st.needReview = true; st.readAt = null; }
+  const next = track.targets[index+1] || null;
+  exam.submitted = true; exam.result = { score, pass, next };
+  persist(); render();
+  const first = document.querySelector(".exam .notice"); if(first) first.scrollIntoView({block:"start"});
+}
+
+/* ---------- events ---------- */
+app.addEventListener("click", e => {
+  const el = e.target.closest("[data-open],[data-act],[data-tab]");
+  if(!el || el.disabled) return;
+  if(el.dataset.open){
+    const id = el.dataset.open, st = tState(id);
+    if(!st.startedAt){ st.startedAt = Date.now(); persist(); }
+    exam = null;
+    go({ name:"target", id, tab:"materi" }); return;
+  }
+  if(el.dataset.tab){
+    const tab = el.dataset.tab;
+    if(tab === "ujian" && exam && exam.submitted){ exam = null; }
+    view.tab = tab; render(); window.scrollTo({top:0}); return;
+  }
+  const act = el.dataset.act;
+  if(act === "home"){ exam = null; go({ name:"home" }); }
+  else if(act === "read"){ const st = tState(view.id); st.readAt = Date.now(); st.needReview = false; exam = null; persist(); view.tab = "ujian"; render(); window.scrollTo({top:0}); }
+  else if(act === "submit"){ submitExam(); }
+  else if(act === "bk-export" || act === "bk-import"){ view.backup = act === "bk-export" ? "export" : "import"; render(); const b = document.getElementById("backup"); if(b) b.scrollIntoView({block:"center"}); }
+  else if(act === "bk-close"){ view.backup = null; render(); }
+  else if(act === "bk-copy"){
+    const ta = document.getElementById("bk-out"), msg = document.getElementById("bk-msg");
+    const fallback = () => { ta.focus(); ta.select(); msg.textContent = "Kode sudah dipilih. Tekan Ctrl+C atau salin manual."; };
+    try{ navigator.clipboard.writeText(ta.value).then(() => { msg.textContent = "Kode tersalin."; }, fallback); }catch(err){ fallback(); }
+  }
+  else if(act === "bk-apply"){
+    const msg = document.getElementById("bk-msg");
+    try{ S = decodeBackup(document.getElementById("bk-in").value); exam = null; persist(); view.backup = null; render(); }
+    catch(err){ msg.style.color = "var(--bad)"; msg.textContent = "Kode tidak dikenali. Pastikan seluruh kode tersalin, termasuk awalan JNL1:."; }
+  }
+  else if(act === "reset"){ view.confirmReset = true; render(); }
+  else if(act === "reset-no"){ view.confirmReset = false; render(); }
+  else if(act === "reset-yes"){ S = { v:1, t:{} }; exam = null; persist(); go({ name:"home" }); }
+});
+app.addEventListener("change", e => {
+  const inp = e.target;
+  if(inp.matches('input[type="radio"][data-q]') && exam && !exam.submitted){
+    exam.answers[+inp.dataset.q] = +inp.value;
+    const fs = inp.closest(".opts");
+    fs.querySelectorAll(".opt").forEach(l => l.classList.toggle("sel", l.contains(inp)));
+    const answered = Object.keys(exam.answers).length, total = exam.order.length;
+    const bar = app.querySelector(".sticky");
+    if(bar){ bar.querySelector("span").textContent = answered+" dari "+total+" dijawab"; bar.querySelector("button").disabled = answered < total; }
+  }
+});
+
+/* ---------- boot ---------- */
+const local = loadLocal();
+if(local){ S = local; saveMode = "local"; }
+render();
+initDb();
+})();
+</script>
+</body>
+</html>
